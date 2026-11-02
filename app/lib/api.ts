@@ -61,10 +61,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
 
 export const api = {
   login_coach: (body: LoginRequest) =>
-    request<LoginData>("/coach/login", { method: "POST", body: JSON.stringify(body) }),
+    request<LoginData>("/login/coach", { method: "POST", body: JSON.stringify(body) }),
 
   login_learner: (body: LoginRequest) =>
-    request<LoginData>("/learner/login", { method: "POST", body: JSON.stringify(body) }),
+    request<LoginData>("/login/learner", { method: "POST", body: JSON.stringify(body) }),
 
   register_coach: (body: RegisterRequest) =>
     request<unknown>("/coach", { method: "POST", body: JSON.stringify(body) }),
