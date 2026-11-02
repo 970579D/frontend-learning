@@ -5,20 +5,21 @@ import { useRouter } from "next/navigation";
 import Login from "@/app/components/login/page";
 import Modal from "@/app/components/modal/page";
 import { api, isSuccess, LoginRequest } from "@/app/lib/api";
+import { useAuth } from "../lib/auth";
 
 export default function CoachLoginPage() {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const { signIn } = useAuth();
   async function handleLogin(body: LoginRequest) {
     setLoading(true);
     const res = await api.login_coach(body);
     setLoading(false);
 
     if (isSuccess(res)) {
-      if (res.data?.login_id) localStorage.setItem("login_id", String(res.data.login_id));
-      router.push("/coach");
+      signIn({ username: body.username, role: "coach", loginId: res.data?.login_id });
+      router.push("/coach_profile");
     } else {
       setErrorMessage(res.message);
     }

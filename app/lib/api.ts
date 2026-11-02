@@ -21,6 +21,17 @@ export type LoginData = {
   username: string;
 };
 
+export type ProfileData = {
+  id?: number;
+  username: string;
+  firstname: string;
+  lastname: string;
+  status?: string;          // coach only
+  create_date: string;
+  last_update: string;
+  skills?: { skill_name?: string }[];   // coach only
+};
+
 // success only counts when the server also returned data
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
@@ -74,4 +85,10 @@ export const api = {
 
   logout: (loginId: number) =>
     request<unknown>("/logout", { method: "POST", body: JSON.stringify({ login_id: loginId }) }),
+
+  get_coach: (username: string) =>
+    request<ProfileData>(`/coach/${encodeURIComponent(username)}`),
+
+  get_learner: (username: string) =>
+    request<ProfileData>(`/learner/${encodeURIComponent(username)}`),
 };
