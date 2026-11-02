@@ -17,12 +17,12 @@ export default function CoachRegisterPage() {
     setLoading(true);
     const res = await api.register_coach(body);
     setLoading(false);
-    setResult(res);                       // opens the modal
+    setResult(res); 
   }
 
   function handleClose() {
     setResult(null);
-    if (ok) router.push("/coach_login");  // redirect only after success
+    if (ok) router.push("/coach_login");
   }
 
   return (
