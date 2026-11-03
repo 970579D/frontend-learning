@@ -18,8 +18,8 @@ export default function LearnerLoginPage() {
     const res = await api.login_learner(body);
     setLoading(false);
 
-    if (isSuccess(res)) {
-      signIn({ username: body.username, role: "learner", loginId: res.data?.login_id });
+    if (isSuccess(res) && res.data) {
+      signIn({ username: res.data.username, role: "learner", session: res.data.session });
       router.push("/learner_profile");
     } else {
       setErrorMessage(res.message);

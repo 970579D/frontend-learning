@@ -12,13 +12,14 @@ export default function CoachLoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
+
   async function handleLogin(body: LoginRequest) {
     setLoading(true);
     const res = await api.login_coach(body);
     setLoading(false);
 
-    if (isSuccess(res)) {
-      signIn({ username: body.username, role: "coach", loginId: res.data?.login_id });
+    if (isSuccess(res) && res.data) {
+      signIn({ username: res.data.username, role: "coach", session: res.data.session });
       router.push("/coach_profile");
     } else {
       setErrorMessage(res.message);

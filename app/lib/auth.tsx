@@ -3,7 +3,7 @@
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 
 export type Role = "coach" | "learner";
-export type AuthUser = { username: string; role: Role; loginId?: number };
+export type AuthUser = { username: string; role: Role; session?: string };
 
 type AuthContextType = {
   user: AuthUser | null;
@@ -84,3 +84,4 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
   return ctx;
 }
+

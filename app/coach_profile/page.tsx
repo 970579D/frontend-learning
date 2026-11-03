@@ -17,7 +17,7 @@ export default function CoachProfilePage() {
   useEffect(() => {
     if (!ready) return;
     if (!user || user.role !== "coach") {
-      router.replace("/coach_login");     // not logged in as a coach
+      router.replace("/coach_login");
       return;
     }
     api.get_coach(user.username).then((res) => {

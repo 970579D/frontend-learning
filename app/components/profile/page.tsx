@@ -13,7 +13,10 @@ export default function Profile({ title, profile, loading }: ProfileProps) {
   if (loading) {
     return <p className="mt-24 text-center text-gray-400">Loading profile...</p>;
   }
-  if (!profile) return null;
+  
+  if (!profile) {
+    return <p className="mt-24 text-center text-gray-400">No profile data</p>;
+  }
 
   const rows: [string, string][] = [
     ["Username", profile.username],

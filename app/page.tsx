@@ -1,7 +1,19 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { GraduationCap, UserRoundCog } from "lucide-react";
+import { useAuth } from "@/app/lib/auth";
 
 const menus = [
+  {
+    href: "/learner_login",
+    title: "Learner",
+    desc: "Learn new skills with a coach",
+    Icon: GraduationCap,
+    color: "from-emerald-500 to-teal-600",
+  },
   {
     href: "/coach_login",
     title: "Coach",
@@ -9,18 +21,24 @@ const menus = [
     Icon: UserRoundCog,
     color: "from-blue-500 to-indigo-600",
   },
-  {
-    href: "/learner_login",
-    title: "Learner",
-    desc: "Learn new skills with a coach",
-    Icon: GraduationCap,
-    color: "from-emerald-500 to-teal-600",
-  }
 ];
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user, ready } = useAuth();
+
+  // already logged in: go to the profile page of that role
+  useEffect(() => {
+    if (ready && user) router.replace(`/${user.role}_profile`);
+  }, [ready, user, router]);
+
+  // wait for the stored user to be read, and avoid a flash of the menu while redirecting
+  if (!ready || user) {
+    return <p className="mt-24 text-center text-gray-400">Loading...</p>;
+  }
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-10 p-6">
+    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-4xl flex-col items-center justify-center gap-10 p-6">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-white">Learning App</h1>
         <p className="mt-2 text-gray-400">Choose how you want to continue</p>

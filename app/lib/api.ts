@@ -17,8 +17,11 @@ export type ApiResponse<T = unknown> = {
 };
 
 export type LoginData = {
-  login_id?: number;
+  id: number;                    // row id, not used by the frontend
   username: string;
+  session: string;               // uuid, used to log out
+  login_date: string;
+  logout_date: string | null;
 };
 
 export type ProfileData = {
@@ -29,7 +32,7 @@ export type ProfileData = {
   status?: string;          // coach only
   create_date: string;
   last_update: string;
-  skills?: { skill_name?: string }[];   // coach only
+  skills?: { skill_name?: string; name?: string }[];   // coach only
 };
 
 // success only counts when the server also returned data
@@ -63,7 +66,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
         ? detail
         : Array.isArray(detail)
           ? detail.map((d: { msg: string }) => d.msg).join(", ")
-          : "Request failed";
+          : `Request failed (${res.status})`;   // status shows what really happened, e.g. 500
     return { status: "error", message, data: null };
   }
 
@@ -83,12 +86,15 @@ export const api = {
   register_learner: (body: RegisterRequest) =>
     request<unknown>("/learner", { method: "POST", body: JSON.stringify(body) }),
 
-  logout: (loginId: number) =>
-    request<unknown>("/logout", { method: "POST", body: JSON.stringify({ login_id: loginId }) }),
+  logout_coach: (session: string) =>
+    request<unknown>("/login/logout/coach", { method: "PUT", body: JSON.stringify({ session }) }),
+
+  logout_learner: (session: string) =>
+    request<unknown>("/login/logout/learner", { method: "PUT", body: JSON.stringify({ session }) }),
 
   get_coach: (username: string) =>
-    request<ProfileData>(`/coach/${encodeURIComponent(username)}`),
+    request<ProfileData>(`/coach/${encodeURIComponent(username)}`, { method: "GET" }),
 
   get_learner: (username: string) =>
-    request<ProfileData>(`/learner/${encodeURIComponent(username)}`),
+    request<ProfileData>(`/learner/${encodeURIComponent(username)}`, { method: "GET" }),
 };
