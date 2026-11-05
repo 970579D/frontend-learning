@@ -1,26 +1,22 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GraduationCap, UserRoundCog } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/app/lib/auth";
 
-const menus = [
-  {
-    href: "/learner_login",
-    title: "Learner",
-    desc: "Learn new skills with a coach",
-    Icon: GraduationCap,
-    color: "from-emerald-500 to-teal-600",
-  },
-  {
-    href: "/coach_login",
-    title: "Coach",
-    desc: "Manage your skills and learners",
-    Icon: UserRoundCog,
-    color: "from-blue-500 to-indigo-600",
-  },
+// put these files in  public/images/
+const imagePath = { src: "/images/0.jpg", alt: "Learning App" };
+
+const images = [
+  { src: "/images/1.jpg", alt: "Coach teaching a class" },
+  { src: "/images/2.jpg", alt: "Learner studying online" },
+  { src: "/images/3.jpg", alt: "Group workshop" },
+  { src: "/images/4.jpg", alt: "One-on-one coaching" },
+  { src: "/images/5.jpg", alt: "Practicing a new skill" },
+  { src: "/images/6.jpg", alt: "Celebrating progress" },
 ];
 
 export default function HomePage() {
@@ -32,33 +28,66 @@ export default function HomePage() {
     if (ready && user) router.replace(`/${user.role}_profile`);
   }, [ready, user, router]);
 
-  // wait for the stored user to be read, and avoid a flash of the menu while redirecting
   if (!ready || user) {
     return <p className="mt-24 text-center text-gray-400">Loading...</p>;
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-4xl flex-col items-center justify-center gap-10 p-6">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-white">Learning App</h1>
-        <p className="mt-2 text-gray-400">Choose how you want to continue</p>
-      </div>
+    <main>
+      {/* zone 1: large image, welcome message, button */}
+      <section className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-5xl flex-col items-center justify-center gap-8 p-6 text-center">
+        {/* large image before the welcome message */}
+        <div className="relative mx-auto aspect-[21/9] w-full max-w-3xl overflow-hidden rounded-2xl border border-gray-800">
+          <Image
+            src={imagePath.src}
+            alt={imagePath.alt}
+            fill
+            priority
+            sizes="(min-width: 768px) 720px, 100vw"
+            quality={70}
+            className="object-cover"
+          />
+        </div>
 
-      <div className="grid w-full gap-6 sm:grid-cols-2">
-        {menus.map(({ href, title, desc, Icon, color }) => (
-          <Link
-            key={href}
-            href={href}
-            className="group flex flex-col items-center gap-4 rounded-2xl border border-gray-800 bg-gray-900 p-10 text-center shadow-lg shadow-black/40 transition hover:-translate-y-1 hover:border-gray-600"
-          >
-            <div className={`rounded-full bg-gradient-to-br ${color} p-6 text-white transition group-hover:scale-110`}>
-              <Icon size={56} strokeWidth={1.5} />
-            </div>
-            <h2 className="text-2xl font-semibold text-white">{title}</h2>
-            <p className="text-sm text-gray-400">{desc}</p>
-          </Link>
-        ))}
-      </div>
+        <h1 className="text-4xl font-bold text-white">Welcome to Learning App</h1>
+
+        <p className="max-w-3xl leading-relaxed text-gray-400">
+          Learning App connects people who want to learn with coaches who love to teach.
+          Coaches share their skills and manage their profile, while learners browse
+          skills, follow their progress and grow step by step. Create an account in
+          a minute and start learning at your own pace.
+        </p>
+
+        <Link
+          href="/menu"
+          className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-500"
+        >
+          Get started
+          <ArrowRight size={18} />
+        </Link>
+      </section>
+
+      {/* zone 2: image grid, visible after scrolling */}
+      {images.length > 0 && (
+        <section className="mx-auto max-w-5xl px-6 pb-16 pt-8">
+          <div className="grid w-full grid-cols-3 gap-3">
+            {images.map(({ src, alt }) => (
+              <div
+                key={src}
+                className="relative aspect-video overflow-hidden rounded-2xl border border-gray-800"
+              >
+                <Image
+                  src={src}
+                  alt={alt}
+                  fill
+                  sizes="(min-width: 1024px) 320px, 33vw"
+                  className="object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

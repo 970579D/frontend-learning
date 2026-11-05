@@ -1,19 +1,48 @@
-import { UserRound } from "lucide-react";
+"use client";
+
+import { ChangeEvent, useRef, useState } from "react";
+import { BadgeCheck, Camera, Trash2, UserRound } from "lucide-react";
+import Modal from "@/app/components/modal/page";
 import type { ProfileData } from "@/app/lib/api";
+import type { Role } from "@/app/lib/auth";
+import { roleTheme } from "@/app/lib/theme";
+import { fileToAvatar, useAvatar } from "@/app/lib/avatar";   // saveAvatar and removeAvatar no longer needed here
 
 type ProfileProps = {
   title: string;
+  role: Role;
   profile: ProfileData | null;
   loading: boolean;
+  onImageChange: (dataUrl: string | null) => void | Promise<void>;   // new
 };
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "-");
+const MAX_SIZE = 5 * 1024 * 1024;   // 5 MB
 
-export default function Profile({ title, profile, loading }: ProfileProps) {
+export default function Profile({ title, role, profile, loading, onImageChange }: ProfileProps) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const avatar = useAvatar(role, profile?.username);
+  const [error, setError] = useState("");
+  const theme = roleTheme[role];
+
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !profile) return;
+
+    if (!file.type.startsWith("image/")) return setError("Please choose an image file");
+    if (file.size > MAX_SIZE) return setError("Image must be smaller than 5 MB");
+
+    try {
+      await onImageChange(await fileToAvatar(file));   // parent saves it to the DB
+    } catch {
+      setError("Could not save this image");
+    }
+  }
+
   if (loading) {
     return <p className="mt-24 text-center text-gray-400">Loading profile...</p>;
   }
-  
   if (!profile) {
     return <p className="mt-24 text-center text-gray-400">No profile data</p>;
   }
@@ -24,15 +53,55 @@ export default function Profile({ title, profile, loading }: ProfileProps) {
     ["Last name", profile.lastname],
     ...(profile.status ? [["Status", profile.status] as [string, string]] : []),
     ["Created", fmt(profile.create_date)],
-    ["Last update", fmt(profile.last_update)],
+    ["Last update", fmt(profile.update_date)],
   ];
 
   return (
     <div className="mx-auto mt-12 w-full max-w-lg rounded-2xl border border-gray-800 bg-gray-900 p-8 shadow-lg shadow-black/40">
       <div className="flex flex-col items-center gap-3 text-center">
-        <div className="rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 p-6 text-white">
-          <UserRound size={48} strokeWidth={1.5} />
+        {/* avatar with upload button */}
+        <div className="relative">
+          <div
+            className={`flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br text-white ${theme.gradient}`}
+          >
+            {avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatar} alt="Profile" className="h-full w-full object-cover" />
+            ) : (
+              <UserRound size={48} strokeWidth={1.5} />
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            aria-label="Upload photo"
+            title="Upload photo"
+            className={`absolute bottom-0 right-0 rounded-full border-2 border-gray-900 p-2 text-white hover:brightness-110 ${theme.solid}`}
+          >
+            <Camera size={16} />
+          </button>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFile}
+            className="hidden"
+          />
         </div>
+
+        {avatar && (
+          <button
+            type="button"
+            onClick={() => onImageChange(null)}
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-400"
+          >
+            <Trash2 size={12} />
+            Remove photo
+          </button>
+        )}
+
         <h1 className="text-2xl font-semibold text-white">
           {profile.firstname} {profile.lastname}
         </h1>
@@ -48,22 +117,38 @@ export default function Profile({ title, profile, loading }: ProfileProps) {
         ))}
       </dl>
 
+
       {profile.skills && (
         <div className="mt-6">
           <h2 className="mb-2 text-sm text-gray-400">Skills</h2>
           {profile.skills.length === 0 ? (
             <p className="text-sm text-gray-500">No skills yet</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.map((s, i) => (
-                <span key={i} className="rounded-full bg-gray-800 px-3 py-1 text-xs text-gray-200">
-                  {s.skill_name ?? "-"}
-                </span>
-              ))}
-            </div>
+            <>
+              <div className="flex flex-wrap gap-2">
+                {profile.skills.map((s) => {
+                  const passed = s.status === "active";
+                  return (
+                    <span
+                      key={s.skill_name}
+                      title={passed ? "Exam passed" : "Exam not passed yet"}
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${passed
+                          ? "bg-emerald-900/60 text-emerald-300 ring-1 ring-emerald-500/50"
+                          : "bg-gray-800 text-gray-300 ring-1 ring-gray-500/50"
+                        }`}
+                    >
+                      {passed && <BadgeCheck size={12} />}
+                      {s.skill_name}
+                    </span>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       )}
+
+      <Modal open={!!error} type="error" message={error} onClose={() => setError("")} />
     </div>
   );
 }

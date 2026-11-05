@@ -31,8 +31,30 @@ export type ProfileData = {
   lastname: string;
   status?: string;          // coach only
   create_date: string;
-  last_update: string;
-  skills?: { skill_name?: string; name?: string }[];   // coach only
+  update_date: string;
+  image_path: string | null;
+  skills?: { skill_name: string; status: string }[];   // coach only
+};
+
+export type AttemptData = {
+  id: number;
+  assessment_uuid: string;
+  assessment_skill: string;
+  round_attempt: number;
+  score: number;
+  status: "pass" | "fail";
+  create_date: string;
+  update_date: string;
+};
+
+export type AssessmentData = {
+  id: number;
+  uuid: string;
+  assessment_skill: string;
+  assessment_skill_category: string;
+  status: "pending" | "pass" | "fail";
+  total_attempt: number;
+  attemps: AttemptData[];
 };
 
 // success only counts when the server also returned data
@@ -73,6 +95,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
   return { status: "success", message: "OK", data: body as T };
 }
 
+  
+
 export const api = {
   login_coach: (body: LoginRequest) =>
     request<LoginData>("/login/coach", { method: "POST", body: JSON.stringify(body) }),
@@ -97,4 +121,19 @@ export const api = {
 
   get_learner: (username: string) =>
     request<ProfileData>(`/learner/${encodeURIComponent(username)}`, { method: "GET" }),
+
+  image_coach: (username: string, imagePath: string | null) =>
+    request<{ username: string; image_path: string | null }>("/coach/image", {
+      method: "PUT",
+      body: JSON.stringify({ username, image_path: imagePath }),
+    }),
+
+  image_learner: (username: string, imagePath: string | null) =>
+    request<{ username: string; image_path: string | null }>("/learner/image", {
+      method: "PUT",
+      body: JSON.stringify({ username, image_path: imagePath }),
+    }),
+
+  get_coach_assessment: (username: string) =>
+    request<AssessmentData[]>(`/coach/assessment/${encodeURIComponent(username)}`, { method: "GET" }),
 };
