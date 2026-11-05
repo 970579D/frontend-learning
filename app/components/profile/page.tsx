@@ -3,25 +3,25 @@
 import { ChangeEvent, useRef, useState } from "react";
 import { BadgeCheck, Camera, Trash2, UserRound } from "lucide-react";
 import Modal from "@/app/components/modal/page";
-import type { ProfileData } from "@/app/lib/api";
+import { ProfileData, imageUrl } from "@/app/lib/api";
 import type { Role } from "@/app/lib/auth";
 import { roleTheme } from "@/app/lib/theme";
-import { fileToAvatar, useAvatar } from "@/app/lib/avatar";   // saveAvatar and removeAvatar no longer needed here
+import { fileToAvatar, useAvatar } from "@/app/lib/avatar";
 
 type ProfileProps = {
   title: string;
   role: Role;
   profile: ProfileData | null;
   loading: boolean;
-  onImageChange: (dataUrl: string | null) => void | Promise<void>;   // new
-};
+  onImageChange: (blob: Blob | null) => void | Promise<void>;
+}
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "-");
 const MAX_SIZE = 5 * 1024 * 1024;   // 5 MB
 
 export default function Profile({ title, role, profile, loading, onImageChange }: ProfileProps) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const avatar = useAvatar(role, profile?.username);
+  const avatar = imageUrl(useAvatar(role, profile?.username));
   const [error, setError] = useState("");
   const theme = roleTheme[role];
 

@@ -44,7 +44,7 @@ export default function HomePage() {
             fill
             priority
             sizes="(min-width: 768px) 720px, 100vw"
-            quality={70}
+            quality={75}
             className="object-cover"
           />
         </div>

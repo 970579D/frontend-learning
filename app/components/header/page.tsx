@@ -3,18 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown, LogOut, UserRound, Landmark } from "lucide-react";
+import { ArrowLeft, ChevronDown, LogOut, UserRound, House } from "lucide-react";
 import { useAuth } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
 import { roleTheme } from "@/app/lib/theme";
 import Modal from "@/app/components/modal/page";
-import { api } from "@/app/lib/api";
+import { api, imageUrl } from "@/app/lib/api";
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, ready, signOut } = useAuth();
-  const avatar = useAvatar(user?.role, user?.username);
+  const avatar = imageUrl(useAvatar(user?.role, user?.username));
   const theme = roleTheme[user?.role ?? "coach"];
   const [result, setResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -60,7 +60,7 @@ export default function Header() {
             )} */}
 
             {(!user && pathname != "/") && <Link href="/" className="text-lg font-semibold text-white">
-              <Landmark size={30} opacity={0.7}/>
+              <House size={30} opacity={0.7}/>
             </Link>}
           </div>
 

@@ -57,18 +57,21 @@ export type AssessmentData = {
   attemps: AttemptData[];
 };
 
+type ImageData = { username: string; image_path: string | null };
+
 // success only counts when the server also returned data
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   let res: Response;
+  const isForm = options.body instanceof FormData;       // CHANGED
   try {
     res = await fetch(`${API_URL}${path}`, {
       ...options,
-      headers: { "Content-Type": "application/json", ...options.headers },
+      headers: isForm ? options.headers : { "Content-Type": "application/json", ...options.headers },   // CHANGED
     });
-  } catch {
+  }catch {
     // server down, wrong URL, or blocked by CORS
     return { status: "error", message: "Cannot reach the server", data: null };
   }
@@ -95,7 +98,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
   return { status: "success", message: "OK", data: body as T };
 }
 
-  
+export const imageUrl = (path?: string | null) =>
+  !path ? null : path.startsWith("data:") ? path : `${API_URL}/uploads/avatars/${path}`;
 
 export const api = {
   login_coach: (body: LoginRequest) =>
@@ -122,17 +126,33 @@ export const api = {
   get_learner: (username: string) =>
     request<ProfileData>(`/learner/${encodeURIComponent(username)}`, { method: "GET" }),
 
-  image_coach: (username: string, imagePath: string | null) =>
-    request<{ username: string; image_path: string | null }>("/coach/image", {
-      method: "PUT",
-      body: JSON.stringify({ username, image_path: imagePath }),
-    }),
+  // image_coach: (username: string, imagePath: string | null) =>
+  //   request<{ username: string; image_path: string | null }>("/coach/image", {
+  //     method: "PUT",
+  //     body: JSON.stringify({ username, image_path: imagePath }),
+  //   }),
 
-  image_learner: (username: string, imagePath: string | null) =>
-    request<{ username: string; image_path: string | null }>("/learner/image", {
-      method: "PUT",
-      body: JSON.stringify({ username, image_path: imagePath }),
-    }),
+  // image_learner: (username: string, imagePath: string | null) =>
+  //   request<{ username: string; image_path: string | null }>("/learner/image", {
+  //     method: "PUT",
+  //     body: JSON.stringify({ username, image_path: imagePath }),
+  //   }),
+
+   image_coach: (username: string, file: Blob) => {
+    const form = new FormData();
+    form.append("file", file, "avatar.jpg");
+    return request<ImageData>(`/coach/image/${encodeURIComponent(username)}`, { method: "PUT", body: form });
+  },
+  remove_image_coach: (username: string) =>
+    request<ImageData>(`/coach/image/${encodeURIComponent(username)}`, { method: "DELETE" }),
+
+  image_learner: (username: string, file: Blob) => {
+    const form = new FormData();
+    form.append("file", file, "avatar.jpg");
+    return request<ImageData>(`/learner/image/${encodeURIComponent(username)}`, { method: "PUT", body: form });
+  },
+  remove_image_learner: (username: string) =>
+    request<ImageData>(`/learner/image/${encodeURIComponent(username)}`, { method: "DELETE" }),
 
   get_coach_assessment: (username: string) =>
     request<AssessmentData[]>(`/coach/assessment/${encodeURIComponent(username)}`, { method: "GET" }),

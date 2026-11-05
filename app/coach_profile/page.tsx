@@ -39,17 +39,21 @@ export default function CoachProfilePage() {
     });
   }, [ready, user, router]);
 
-  async function handleImage(dataUrl: string | null) {
+  async function handleImage(blob: Blob | null) {
     if (!profile) return;
 
-    const res = await api.image_coach(profile.username, dataUrl);
+    const res = blob
+      ? await api.image_coach(profile.username, blob)
+      : await api.remove_image_coach(profile.username);
+
     if (!isSuccess(res)) {
       setErrorMessage(res.message);
       return;
     }
 
-    setProfile({ ...profile, image_path: dataUrl });
-    if (dataUrl) saveAvatar("coach", profile.username, dataUrl);
+    const name = res.data?.image_path ?? null;
+    setProfile({ ...profile, image_path: name });
+    if (name) saveAvatar("coach", profile.username, name);
     else removeAvatar("coach", profile.username);
   }
 

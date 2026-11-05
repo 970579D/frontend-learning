@@ -39,17 +39,21 @@ export default function LearnerProfilePage() {
     });
   }, [ready, user, router]);
 
-  async function handleImage(dataUrl: string | null) {
+  async function handleImage(blob: Blob | null) {
     if (!profile) return;
 
-    const res = await api.image_learner(profile.username, dataUrl);
+    const res = blob
+      ? await api.image_learner(profile.username, blob)
+      : await api.remove_image_learner(profile.username);
+
     if (!isSuccess(res)) {
       setErrorMessage(res.message);
       return;
     }
 
-    setProfile({ ...profile, image_path: dataUrl });
-    if (dataUrl) saveAvatar("learner", profile.username, dataUrl);
+    const name = res.data?.image_path ?? null;
+    setProfile({ ...profile, image_path: name });
+    if (name) saveAvatar("learner", profile.username, name);
     else removeAvatar("learner", profile.username);
   }
 

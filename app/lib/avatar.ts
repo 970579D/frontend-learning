@@ -44,7 +44,7 @@ export function removeAvatar(role: Role, username: string) {
 }
 
 // crop the center square and shrink it, so it fits in localStorage (about 20-40 KB)
-export function fileToAvatar(file: File, size = 256): Promise<string> {
+export function fileToAvatar(file: File, size = 512): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -62,7 +62,11 @@ export function fileToAvatar(file: File, size = 256): Promise<string> {
 
       if (!ctx) return reject(new Error("Canvas not supported"));
       ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
-      resolve(canvas.toDataURL("image/jpeg", 0.85));
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Cannot encode image"))),
+        "image/jpeg",
+        0.85,
+      );
     };
 
     img.onerror = () => {
@@ -73,3 +77,4 @@ export function fileToAvatar(file: File, size = 256): Promise<string> {
     img.src = url;
   });
 }
+
