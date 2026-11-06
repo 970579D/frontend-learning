@@ -1,8 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
-
-export type Role = "coach" | "learner";
+export type Role = "coach" | "learner" | "admin";
 export type AuthUser = { username: string; role: Role; session?: string };
 
 type AuthContextType = {
@@ -85,3 +84,5 @@ export function useAuth() {
   return ctx;
 }
 
+// where each role lands after login
+export const homeOf = (role: Role) => (role === "admin" ? "/admin" : `/${role}_profile`);

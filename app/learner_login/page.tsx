@@ -29,7 +29,7 @@ export default function LearnerLoginPage() {
   return (
     <>
       <Login
-        title="Learner Login"
+        title="Learner"
         registerHref="/learner_register"
         onSubmit={handleLogin}
         loading={loading}

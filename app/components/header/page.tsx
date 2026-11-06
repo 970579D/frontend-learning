@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown, LogOut, UserRound, House } from "lucide-react";
-import { useAuth } from "@/app/lib/auth";
+import {  ChevronDown, LogOut, UserRound, House } from "lucide-react";
+import { useAuth, homeOf } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
 import { roleTheme } from "@/app/lib/theme";
 import Modal from "@/app/components/modal/page";
@@ -23,17 +23,17 @@ export default function Header() {
 
     // old stored login without a session: nothing to close on the server
     if (user.session) {
-      const res =
-        user.role === "coach"
-          ? await api.logout_coach(user.session)
-          : await api.logout_learner(user.session);
+      const logout = {
+        coach: api.logout_coach,
+        learner: api.logout_learner,
+        admin: api.logout_admin,
+      }[user.role];
+      const res = await logout(user.session);
 
-      // logout has no data to return, so check only the status
       if (res.status !== "success") {
         setResult({ type: "error", message: res.message });
-        return;   // stay logged in: no signOut, no redirect
+        return;
       }
-
       setResult({ type: "success", message: res.message });
     }
 
@@ -60,7 +60,7 @@ export default function Header() {
             )} */}
 
             {(!user && pathname != "/") && <Link href="/" className="text-lg font-semibold text-white">
-              <House size={30} opacity={0.7}/>
+              <House size={30} opacity={0.7} />
             </Link>}
           </div>
 
@@ -100,21 +100,21 @@ export default function Header() {
                   </Link>
                   {user?.role == "coach" &&
                     <Link
-                    href={`/${user.role}_verification`}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
-                  >
-                    <UserRound size={16} />
-                    Verification
-                  </Link>
+                      href={`/${user.role}_verification`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
+                    >
+                      <UserRound size={16} />
+                      Verification
+                    </Link>
                   }
                   {user?.role == "learner" &&
                     <Link
-                    href={`/${user.role}_verification`}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
-                  >
-                    <UserRound size={16} />
-                    Class
-                  </Link>
+                      href={`/${user.role}_verification`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
+                    >
+                      <UserRound size={16} />
+                      Class
+                    </Link>
                   }
                   <button
                     type="button"

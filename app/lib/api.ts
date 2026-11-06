@@ -17,9 +17,9 @@ export type ApiResponse<T = unknown> = {
 };
 
 export type LoginData = {
-  id: number;                    // row id, not used by the frontend
+  id: number;
   username: string;
-  session: string;               // uuid, used to log out
+  session: string;
   login_date: string;
   logout_date: string | null;
 };
@@ -29,11 +29,16 @@ export type ProfileData = {
   username: string;
   firstname: string;
   lastname: string;
-  status?: string;          // coach only
+  status?: string;
+  image_path?: string | null;
   create_date: string;
   update_date: string;
+  skills?: { skill_name: string; status: "active" | "inactive" }[];
+};
+
+export type ImageData = {
+  username: string;
   image_path: string | null;
-  skills?: { skill_name: string; status: string }[];   // coach only
 };
 
 export type AttemptData = {
@@ -57,33 +62,59 @@ export type AssessmentData = {
   attemps: AttemptData[];
 };
 
-type ImageData = { username: string; image_path: string | null };
+export type ExamSession = {
+  uuid: string;
+  exam_time: string;
+  skill: string;
+  status: "open" | "closed" | "finished";
+  booking_count: number;
+  booked: boolean;
+};
 
-// success only counts when the server also returned data
+export type ExamBooking = {
+  uuid: string;
+  username: string;
+  session_uuid: string;
+  skill: string;
+  exam_time: string;
+  session_status: "open" | "closed" | "finished";
+  checked_in: boolean;
+  verified: boolean;
+};
+
+export type ExamResult = {
+  username: string;
+  skill: string;
+  round_attempt: number;
+  score: number;
+  status: "pass" | "fail";
+};
+
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
 
+export const imageUrl = (path?: string | null) =>
+  !path ? null : path.startsWith("data:") ? path : `${API_URL}/uploads/avatars/${path}`;
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const isForm = options.body instanceof FormData;
+
   let res: Response;
-  const isForm = options.body instanceof FormData;       // CHANGED
   try {
     res = await fetch(`${API_URL}${path}`, {
       ...options,
-      headers: isForm ? options.headers : { "Content-Type": "application/json", ...options.headers },   // CHANGED
+      headers: isForm ? options.headers : { "Content-Type": "application/json", ...options.headers },
     });
-  }catch {
-    // server down, wrong URL, or blocked by CORS
+  } catch {
     return { status: "error", message: "Cannot reach the server", data: null };
   }
 
   const body = await res.json().catch(() => null);
 
-  // your backend envelope: { status, message, data }
   if (body && typeof body.status === "string") {
     return body as ApiResponse<T>;
   }
 
-  // FastAPI default errors: { detail: "..." } or [{ msg }] for 422
   if (!res.ok) {
     const detail = body?.detail;
     const message =
@@ -91,69 +122,70 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
         ? detail
         : Array.isArray(detail)
           ? detail.map((d: { msg: string }) => d.msg).join(", ")
-          : `Request failed (${res.status})`;   // status shows what really happened, e.g. 500
+          : `Request failed (${res.status})`;
     return { status: "error", message, data: null };
   }
 
   return { status: "success", message: "OK", data: body as T };
 }
 
-export const imageUrl = (path?: string | null) =>
-  !path ? null : path.startsWith("data:") ? path : `${API_URL}/uploads/avatars/${path}`;
+const json = (method: string, body: unknown): RequestInit => ({
+  method,
+  body: JSON.stringify(body),
+});
+
+const upload = (file: Blob): RequestInit => {
+  const form = new FormData();
+  form.append("file", file, "avatar.jpg");
+  return { method: "PUT", body: form };
+};
+
+const enc = encodeURIComponent;
 
 export const api = {
-  login_coach: (body: LoginRequest) =>
-    request<LoginData>("/login/coach", { method: "POST", body: JSON.stringify(body) }),
+  login_coach: (body: LoginRequest) => request<LoginData>("/login/coach", json("POST", body)),
+  login_learner: (body: LoginRequest) => request<LoginData>("/login/learner", json("POST", body)),
+  login_admin: (body: LoginRequest) => request<LoginData>("/login/admin", json("POST", body)),
 
-  login_learner: (body: LoginRequest) =>
-    request<LoginData>("/login/learner", { method: "POST", body: JSON.stringify(body) }),
+  logout_coach: (session: string) => request<unknown>("/login/logout/coach", json("PUT", { session })),
+  logout_learner: (session: string) => request<unknown>("/login/logout/learner", json("PUT", { session })),
+  logout_admin: (session: string) => request<unknown>("/login/logout/admin", json("PUT", { session })),
 
-  register_coach: (body: RegisterRequest) =>
-    request<unknown>("/coach", { method: "POST", body: JSON.stringify(body) }),
+  register_coach: (body: RegisterRequest) => request<unknown>("/coach", json("POST", body)),
+  register_learner: (body: RegisterRequest) => request<unknown>("/learner", json("POST", body)),
 
-  register_learner: (body: RegisterRequest) =>
-    request<unknown>("/learner", { method: "POST", body: JSON.stringify(body) }),
+  get_coach: (username: string) => request<ProfileData>(`/coach/${enc(username)}`, { method: "GET" }),
+  get_learner: (username: string) => request<ProfileData>(`/learner/${enc(username)}`, { method: "GET" }),
 
-  logout_coach: (session: string) =>
-    request<unknown>("/login/logout/coach", { method: "PUT", body: JSON.stringify({ session }) }),
-
-  logout_learner: (session: string) =>
-    request<unknown>("/login/logout/learner", { method: "PUT", body: JSON.stringify({ session }) }),
-
-  get_coach: (username: string) =>
-    request<ProfileData>(`/coach/${encodeURIComponent(username)}`, { method: "GET" }),
-
-  get_learner: (username: string) =>
-    request<ProfileData>(`/learner/${encodeURIComponent(username)}`, { method: "GET" }),
-
-  // image_coach: (username: string, imagePath: string | null) =>
-  //   request<{ username: string; image_path: string | null }>("/coach/image", {
-  //     method: "PUT",
-  //     body: JSON.stringify({ username, image_path: imagePath }),
-  //   }),
-
-  // image_learner: (username: string, imagePath: string | null) =>
-  //   request<{ username: string; image_path: string | null }>("/learner/image", {
-  //     method: "PUT",
-  //     body: JSON.stringify({ username, image_path: imagePath }),
-  //   }),
-
-   image_coach: (username: string, file: Blob) => {
-    const form = new FormData();
-    form.append("file", file, "avatar.jpg");
-    return request<ImageData>(`/coach/image/${encodeURIComponent(username)}`, { method: "PUT", body: form });
-  },
+  image_coach: (username: string, file: Blob) =>
+    request<ImageData>(`/coach/image/${enc(username)}`, upload(file)),
+  image_learner: (username: string, file: Blob) =>
+    request<ImageData>(`/learner/image/${enc(username)}`, upload(file)),
   remove_image_coach: (username: string) =>
-    request<ImageData>(`/coach/image/${encodeURIComponent(username)}`, { method: "DELETE" }),
-
-  image_learner: (username: string, file: Blob) => {
-    const form = new FormData();
-    form.append("file", file, "avatar.jpg");
-    return request<ImageData>(`/learner/image/${encodeURIComponent(username)}`, { method: "PUT", body: form });
-  },
+    request<ImageData>(`/coach/image/${enc(username)}`, { method: "DELETE" }),
   remove_image_learner: (username: string) =>
-    request<ImageData>(`/learner/image/${encodeURIComponent(username)}`, { method: "DELETE" }),
+    request<ImageData>(`/learner/image/${enc(username)}`, { method: "DELETE" }),
 
   get_coach_assessment: (username: string) =>
-    request<AssessmentData[]>(`/coach/assessment/${encodeURIComponent(username)}`, { method: "GET" }),
+    request<AssessmentData[]>(`/coach/assessment/${enc(username)}`, { method: "GET" }),
+
+  exam_skills: () => request<string[]>("/exam/skill"),
+  exam_create_session: (body: { skill: string; exam_time: string }) =>
+    request<ExamSession>("/exam/session", json("POST", body)),
+  exam_sessions: () => request<ExamSession[]>("/exam/session"),
+  exam_set_status: (uuid: string, status: ExamSession["status"]) =>
+    request<ExamSession>(`/exam/session/${uuid}/status`, json("PUT", { status })),
+  exam_session_bookings: (uuid: string) =>
+    request<ExamBooking[]>(`/exam/session/${uuid}/booking`),
+  exam_verify: (bookingUuid: string, verify: boolean) =>
+    request<ExamBooking>(`/exam/check-in/${bookingUuid}/verify`, json("PUT", { verify })),
+  exam_result: (bookingUuid: string, score: number) =>
+    request<ExamResult>("/exam/result", json("POST", { booking_uuid: bookingUuid, score })),
+
+  exam_open: (username: string) => request<ExamSession[]>(`/exam/open/${enc(username)}`),
+  exam_my_bookings: (username: string) => request<ExamBooking[]>(`/exam/booking/${enc(username)}`),
+  exam_book: (username: string, sessionUuid: string) =>
+    request<ExamBooking>("/exam/booking", json("POST", { username, session_uuid: sessionUuid })),
+  exam_check_in: (username: string, bookingUuid: string) =>
+    request<ExamBooking>("/exam/check-in", json("POST", { username, booking_uuid: bookingUuid })),
 };

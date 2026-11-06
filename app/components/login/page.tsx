@@ -6,22 +6,21 @@ import type { LoginRequest } from "@/app/lib/api";
 
 type LoginProps = {
   title: string;
-  registerHref: string;
+  registerHref?: string;
   onSubmit: (data: LoginRequest) => void | Promise<void>;
-  error?: string;
   loading?: boolean;
 };
 
 const inputClass =
   "rounded border border-gray-700 bg-gray-800 p-2 text-gray-100 placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 
-export default function Login({ title, registerHref, onSubmit, error, loading }: LoginProps) {
+export default function Login({ title, registerHref, onSubmit, loading }: LoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    onSubmit({ username, password });   // just emit, the parent does the API call
+    onSubmit({ username, password });
   }
 
   return (
@@ -31,8 +30,21 @@ export default function Login({ title, registerHref, onSubmit, error, loading }:
     >
       <h1 className="text-2xl font-semibold text-white">{title}</h1>
 
-      <input className={inputClass} placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-      <input className={inputClass} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+      <input
+        className={inputClass}
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        required
+      />
+      <input
+        className={inputClass}
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
 
       <button
         type="submit"
@@ -42,12 +54,14 @@ export default function Login({ title, registerHref, onSubmit, error, loading }:
         {loading ? "Signing in..." : "Login"}
       </button>
 
-      <p className="text-center text-sm text-gray-400">
-        No account yet?{" "}
-        <Link href={registerHref} className="text-blue-400 hover:underline">
-          Register
-        </Link>
-      </p>
+      {registerHref && (
+        <p className="text-center text-sm text-gray-400">
+          No account yet?{" "}
+          <Link href={registerHref} className="text-blue-400 hover:underline">
+            Register
+          </Link>
+        </p>
+      )}
     </form>
   );
 }

@@ -28,12 +28,7 @@ export default function CoachLoginPage() {
 
   return (
     <>
-      <Login
-        title="Coach Login"
-        registerHref="/coach_register"
-        onSubmit={handleLogin}
-        loading={loading}
-      />
+      <Login title="Coach Login" registerHref="/coach_register" onSubmit={handleLogin} loading={loading} />
       <Modal
         open={!!errorMessage}
         type="error"
