@@ -69,6 +69,7 @@ export type ExamSession = {
   status: "open" | "closed" | "finished";
   booking_count: number;
   booked: boolean;
+  passed: boolean;
 };
 
 export type ExamBooking = {
@@ -201,6 +202,8 @@ export const api = {
     request<ExamBooking>(`/exam/check-in/${bookingUuid}/verify`, json("PUT", { verify })),
   exam_result: (bookingUuid: string, score: number) =>
     request<ExamResult>("/exam/result", json("POST", { booking_uuid: bookingUuid, score })),
+
+  exam_skills: () => request<string[]>("/exam/skill"),
 
   exam_open: (username: string) => request<ExamSession[]>(`/exam/open/${enc(username)}`),
   exam_my_bookings: (username: string) => request<ExamBooking[]>(`/exam/booking/${enc(username)}`),
