@@ -90,6 +90,19 @@ export type ExamResult = {
   status: "pass" | "fail";
 };
 
+export type CategoryData = {
+  id: number;
+  category_name: string;
+  create_date: string;
+};
+
+export type SkillData = {
+  id: number;
+  skill_name: string;
+  category_name: string;
+  create_date: string;
+};
+
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
 
@@ -169,7 +182,14 @@ export const api = {
   get_coach_assessment: (username: string) =>
     request<AssessmentData[]>(`/coach/assessment/${enc(username)}`, { method: "GET" }),
 
-  exam_skills: () => request<string[]>("/exam/skill"),
+  catalog_categories: () => request<CategoryData[]>("/skill/category"),
+  catalog_create_category: (category_name: string) =>
+    request<CategoryData>("/skill/category", json("POST", { category_name })),
+
+  catalog_skills: () => request<SkillData[]>("/skill"),
+  catalog_create_skill: (skill_name: string, category_name: string) =>
+    request<SkillData>("/skill", json("POST", { skill_name, category_name })),
+  
   exam_create_session: (body: { skill: string; exam_time: string }) =>
     request<ExamSession>("/exam/session", json("POST", body)),
   exam_sessions: () => request<ExamSession[]>("/exam/session"),

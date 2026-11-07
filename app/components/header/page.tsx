@@ -3,13 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {  ChevronDown, LogOut, UserRound, House } from "lucide-react";
+import {  House,
+  Award,
+  CalendarCheck,
+  CalendarClock,
+  ChevronDown,
+  LayoutDashboard,
+  Layers,
+  LogOut,
+  ShieldCheck,
+  UserRound, } from "lucide-react";
 import { useAuth, homeOf } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
 import { roleTheme } from "@/app/lib/theme";
 import Modal from "@/app/components/modal/page";
 import { api, imageUrl } from "@/app/lib/api";
-
+const itemClass = "flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800";
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -21,7 +30,6 @@ export default function Header() {
   async function handleLogout() {
     if (!user) return;
 
-    // old stored login without a session: nothing to close on the server
     if (user.session) {
       const logout = {
         coach: api.logout_coach,
@@ -34,6 +42,7 @@ export default function Header() {
         setResult({ type: "error", message: res.message });
         return;
       }
+
       setResult({ type: "success", message: res.message });
     }
 
@@ -66,7 +75,6 @@ export default function Header() {
 
           {ready && user && (
             <div className="group relative">
-              {/* trigger */}
               <button
                 type="button"
                 className="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-900 py-1 pl-1 pr-3 text-sm text-gray-100 hover:border-gray-500"
@@ -88,34 +96,43 @@ export default function Header() {
                 />
               </button>
 
-              {/* dropdown: pt-2 keeps the hover area connected to the button */}
               <div className="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                <div className="w-44 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 py-1 shadow-lg shadow-black/50">
-                  <Link
-                    href={`/${user.role}_profile`}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
-                  >
-                    <UserRound size={16} />
-                    Profile
+                <div className="w-48 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 py-1 shadow-lg shadow-black/50">
+                  <Link href={homeOf(user.role)} className={itemClass}>
+                    {user.role === "admin" ? <LayoutDashboard size={16} /> : <UserRound size={16} />}
+                    {user.role === "admin" ? "Dashboard" : "Profile"}
                   </Link>
-                  {user?.role == "coach" &&
-                    <Link
-                      href={`/${user.role}_verification`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
-                    >
-                      <UserRound size={16} />
-                      Verification
-                    </Link>
-                  }
-                  {user?.role == "learner" &&
-                    <Link
-                      href={`/${user.role}_verification`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800"
-                    >
-                      <UserRound size={16} />
-                      Class
-                    </Link>
-                  }
+
+                  {user.role === "coach" && (
+                    <>
+                      <Link href="/coach_exam" className={itemClass}>
+                        <CalendarCheck size={16} />
+                        Exams
+                      </Link>
+                      <Link href="/coach_verification" className={itemClass}>
+                        <ShieldCheck size={16} />
+                        Verification
+                      </Link>
+                    </>
+                  )}
+
+                  {user.role === "admin" && (
+                    <>
+                      <Link href="/admin_category" className={itemClass}>
+                        <Layers size={16} />
+                        Category
+                      </Link>
+                      <Link href="/admin_skill" className={itemClass}>
+                        <Award size={16} />
+                        Skill
+                      </Link>
+                      <Link href="/admin_exam" className={itemClass}>
+                        <CalendarClock size={16} />
+                        Exam session
+                      </Link>
+                    </>
+                  )}
+
                   <button
                     type="button"
                     onClick={handleLogout}
