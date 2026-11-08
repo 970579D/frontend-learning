@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {  House,
+import {
+  House,
   Award,
   CalendarCheck,
   CalendarClock,
@@ -12,7 +13,9 @@ import {  House,
   Layers,
   LogOut,
   ShieldCheck,
-  UserRound, } from "lucide-react";
+  UserRound,
+  ClipboardCheck,
+} from "lucide-react";
 import { useAuth, homeOf } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
 import { roleTheme } from "@/app/lib/theme";
@@ -129,6 +132,10 @@ export default function Header() {
                       <Link href="/admin_exam" className={itemClass}>
                         <CalendarClock size={16} />
                         Exam session
+                      </Link>
+                      <Link href="/admin_assessment" className={itemClass}>
+                        <ClipboardCheck size={16} />
+                        Assessment
                       </Link>
                     </>
                   )}

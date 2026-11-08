@@ -99,8 +99,14 @@ export default function CoachExamPage() {
                 <p className="text-sm text-gray-400">{fmt(b.exam_time)}</p>
               </div>
 
-              {b.verified ? (
-                <span className="rounded-full bg-emerald-900/60 px-3 py-1 text-xs text-emerald-300">Verified</span>
+              {b.assessed ? (
+                <span className="rounded-full bg-blue-900/60 px-3 py-1 text-xs text-blue-300">
+                  Result saved
+                </span>
+              ) : b.verified ? (
+                <span className="rounded-full bg-emerald-900/60 px-3 py-1 text-xs text-emerald-300">
+                  Attended, waiting for result
+                </span>
               ) : b.checked_in ? (
                 <span className="rounded-full bg-amber-900/50 px-3 py-1 text-xs text-amber-300">
                   Waiting for admin
@@ -136,7 +142,11 @@ export default function CoachExamPage() {
               <div>
                 <p className="font-semibold text-white">{s.skill}</p>
                 <p className="text-sm text-gray-400">{fmt(s.exam_time)}</p>
+                <p className="text-xs text-gray-500">
+                  Total score {s.total_score} · pass at {s.pass_score}
+                </p>
               </div>
+
               {s.passed ? (
                 <span className="rounded-full bg-emerald-900/60 px-3 py-1 text-xs text-emerald-300">Passed</span>
               ) : (

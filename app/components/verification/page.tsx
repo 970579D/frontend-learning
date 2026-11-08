@@ -1,5 +1,5 @@
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
-import type { AssessmentData } from "@/app/lib/api";
+import type { AssessmentData, AttemptData } from "@/app/lib/api";
 
 const badge = {
   pass: { label: "Passed", cls: "bg-emerald-900/60 text-emerald-300 ring-1 ring-emerald-500/50", Icon: CheckCircle2 },
@@ -31,7 +31,10 @@ export default function Verification({ items, loading }: VerificationProps) {
         <div className="flex flex-col gap-4">
           {items.map((a) => {
             const b = badge[a.status] ?? badge.pending;
-            const best = a.attemps.reduce((m, t) => Math.max(m, t.score), 0);   // highest score so far
+            const best = a.attemps.reduce<AttemptData | null>(
+              (m, t) => (!m || t.score / t.total_score > m.score / m.total_score ? t : m),
+              null,
+            );
 
             return (
               <div key={a.uuid} className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
@@ -48,7 +51,7 @@ export default function Verification({ items, loading }: VerificationProps) {
 
                 <p className="mt-3 text-xs text-gray-500">
                   {a.total_attempt} attempt{a.total_attempt === 1 ? "" : "s"}
-                  {a.attemps.length > 0 && ` · best score ${best}`}
+                  {best && ` · best ${best.score}/${best.total_score}`}
                 </p>
 
                 <details className="mt-3 text-sm">
@@ -63,7 +66,7 @@ export default function Verification({ items, loading }: VerificationProps) {
                       {a.attemps.map((t) => (
                         <li key={t.id} className="flex items-center justify-between py-2">
                           <span className="text-gray-300">
-                            {t.round_attempt} · score {t.score}
+                            #{t.round_attempt} · {t.score}/{t.total_score}
                             <span className="ml-2 text-xs text-gray-500">{fmt(t.create_date)}</span>
                           </span>
                           <span className={t.status === "pass" ? "text-emerald-400" : "text-red-400"}>

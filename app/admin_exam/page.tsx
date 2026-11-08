@@ -23,11 +23,9 @@ export default function AdminExamPage() {
   const { user, ready } = useAuth();
   const [sessions, setSessions] = useState<ExamSession[]>([]);
   const [skills, setSkills] = useState<SkillData[]>([]);
-  const [form, setForm] = useState({ skill: "", exam_time: "" });
+  const [form, setForm] = useState({ skill: "", exam_time: "", total_score: "100" });
   const [openUuid, setOpenUuid] = useState<string | null>(null);
   const [bookings, setBookings] = useState<ExamBooking[]>([]);
-  const [scores, setScores] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState<string[]>([]);
   const [notice, setNotice] = useState<Notice>(null);
 
   useEffect(() => {
@@ -60,6 +58,7 @@ export default function AdminExamPage() {
     const res = await api.exam_create_session({
       skill: form.skill,
       exam_time: new Date(form.exam_time).toISOString(),
+      total_score: Number(form.total_score),
     });
     if (!isSuccess(res)) return showError(res);
 
@@ -88,22 +87,6 @@ export default function AdminExamPage() {
     const res = await api.exam_verify(b.uuid, !b.verified);
     if (!isSuccess(res)) return showError(res);
     await loadBookings(b.session_uuid);
-  }
-
-  async function saveResult(b: ExamBooking) {
-    const score = Number(scores[b.uuid]);
-    if (!Number.isInteger(score) || score < 0 || score > 100) {
-      return setNotice({ type: "error", message: "Score must be a whole number from 0 to 100" });
-    }
-
-    const res = await api.exam_result(b.uuid, score);
-    if (!isSuccess(res)) return showError(res);
-
-    setSaved((s) => [...s, b.uuid]);
-    setNotice({
-      type: "success",
-      message: `${res.message}: attempt ${res.data?.round_attempt} (${res.data?.status})`,
-    });
   }
 
   if (!ready || !user || user.role !== "admin") {
@@ -146,6 +129,19 @@ export default function AdminExamPage() {
           />
         </label>
 
+        <label className="flex w-32 flex-col gap-1 text-sm text-gray-400">
+          Total score
+          <input
+            type="number"
+            min={1}
+            max={1000}
+            className={inputClass}
+            value={form.total_score}
+            onChange={(e) => setForm({ ...form, total_score: e.target.value })}
+            required
+          />
+        </label>
+
         <button className="rounded bg-blue-600 px-5 py-2 font-medium text-white hover:bg-blue-500">
           Create
         </button>
@@ -163,6 +159,9 @@ export default function AdminExamPage() {
                 <div>
                   <h2 className="text-lg font-semibold text-white">{s.skill}</h2>
                   <p className="text-sm text-gray-400">{fmt(s.exam_time)}</p>
+                  <p className="text-xs text-gray-500">
+                    Total score {s.total_score} · pass at {s.pass_score}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -205,39 +204,23 @@ export default function AdminExamPage() {
                                 : "bg-gray-800 text-gray-400"
                           }`}
                         >
-                          {b.verified ? "Verified" : b.checked_in ? "Checked in" : "Not checked in"}
+                          {b.verified ? "Attended" : b.checked_in ? "Checked in" : "Not checked in"}
                         </span>
+                        {b.assessed && (
+                          <span className="ml-2 rounded-full bg-blue-900/60 px-2 py-0.5 text-xs text-blue-300">
+                            Assessed
+                          </span>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          disabled={!b.checked_in}
-                          onClick={() => verify(b)}
-                          className="rounded border border-gray-700 px-3 py-1 text-xs text-gray-200 hover:bg-gray-800 disabled:opacity-40"
-                        >
-                          {b.verified ? "Unverify" : "Verify"}
-                        </button>
-
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          placeholder="Score"
-                          disabled={!b.verified || saved.includes(b.uuid)}
-                          value={scores[b.uuid] ?? ""}
-                          onChange={(e) => setScores({ ...scores, [b.uuid]: e.target.value })}
-                          className="w-20 rounded border border-gray-700 bg-gray-800 p-1 text-xs text-gray-100 disabled:opacity-40"
-                        />
-                        <button
-                          type="button"
-                          disabled={!b.verified || saved.includes(b.uuid)}
-                          onClick={() => saveResult(b)}
-                          className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-500 disabled:opacity-40"
-                        >
-                          {saved.includes(b.uuid) ? "Saved" : "Save result"}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        disabled={!b.checked_in || b.assessed}
+                        onClick={() => verify(b)}
+                        className="rounded border border-gray-700 px-3 py-1 text-xs text-gray-200 hover:bg-gray-800 disabled:opacity-40"
+                      >
+                        {b.verified ? "Unverify" : "Verify"}
+                      </button>
                     </li>
                   ))}
                 </ul>

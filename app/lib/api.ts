@@ -47,6 +47,7 @@ export type AttemptData = {
   assessment_skill: string;
   round_attempt: number;
   score: number;
+  total_score: number;
   status: "pass" | "fail";
   create_date: string;
   update_date: string;
@@ -62,10 +63,25 @@ export type AssessmentData = {
   attemps: AttemptData[];
 };
 
+export type CategoryData = {
+  id: number;
+  category_name: string;
+  create_date: string;
+};
+
+export type SkillData = {
+  id: number;
+  skill_name: string;
+  category_name: string;
+  create_date: string;
+};
+
 export type ExamSession = {
   uuid: string;
   exam_time: string;
   skill: string;
+  total_score: number;
+  pass_score: number;
   status: "open" | "closed" | "finished";
   booking_count: number;
   booked: boolean;
@@ -81,6 +97,7 @@ export type ExamBooking = {
   session_status: "open" | "closed" | "finished";
   checked_in: boolean;
   verified: boolean;
+  assessed: boolean;
 };
 
 export type ExamResult = {
@@ -88,20 +105,21 @@ export type ExamResult = {
   skill: string;
   round_attempt: number;
   score: number;
+  total_score: number;
   status: "pass" | "fail";
 };
 
-export type CategoryData = {
-  id: number;
-  category_name: string;
-  create_date: string;
-};
-
-export type SkillData = {
-  id: number;
-  skill_name: string;
-  category_name: string;
-  create_date: string;
+export type ExamAssessment = {
+  booking_uuid: string;
+  username: string;
+  skill: string;
+  exam_time: string;
+  total_score: number;
+  pass_score: number;
+  assessed: boolean;
+  round_attempt: number | null;
+  score: number | null;
+  result: "pass" | "fail" | null;
 };
 
 export const isSuccess = (res: ApiResponse<unknown>) =>
@@ -186,12 +204,11 @@ export const api = {
   catalog_categories: () => request<CategoryData[]>("/skill/category"),
   catalog_create_category: (category_name: string) =>
     request<CategoryData>("/skill/category", json("POST", { category_name })),
-
   catalog_skills: () => request<SkillData[]>("/skill"),
   catalog_create_skill: (skill_name: string, category_name: string) =>
     request<SkillData>("/skill", json("POST", { skill_name, category_name })),
-  
-  exam_create_session: (body: { skill: string; exam_time: string }) =>
+
+  exam_create_session: (body: { skill: string; exam_time: string; total_score: number }) =>
     request<ExamSession>("/exam/session", json("POST", body)),
   exam_sessions: () => request<ExamSession[]>("/exam/session"),
   exam_set_status: (uuid: string, status: ExamSession["status"]) =>
@@ -200,10 +217,9 @@ export const api = {
     request<ExamBooking[]>(`/exam/session/${uuid}/booking`),
   exam_verify: (bookingUuid: string, verify: boolean) =>
     request<ExamBooking>(`/exam/check-in/${bookingUuid}/verify`, json("PUT", { verify })),
+  exam_assessments: () => request<ExamAssessment[]>("/exam/assessment"),
   exam_result: (bookingUuid: string, score: number) =>
     request<ExamResult>("/exam/result", json("POST", { booking_uuid: bookingUuid, score })),
-
-  exam_skills: () => request<string[]>("/exam/skill"),
 
   exam_open: (username: string) => request<ExamSession[]>(`/exam/open/${enc(username)}`),
   exam_my_bookings: (username: string) => request<ExamBooking[]>(`/exam/booking/${enc(username)}`),
