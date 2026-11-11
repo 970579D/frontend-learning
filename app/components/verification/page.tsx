@@ -66,7 +66,7 @@ export default function Verification({ items, loading }: VerificationProps) {
                       {a.attemps.map((t) => (
                         <li key={t.id} className="flex items-center justify-between py-2">
                           <span className="text-gray-300">
-                            #{t.round_attempt} · {t.score}/{t.total_score}
+                            {t.round_attempt} · {t.score}/{t.total_score}
                             <span className="ml-2 text-xs text-gray-500">{fmt(t.create_date)}</span>
                           </span>
                           <span className={t.status === "pass" ? "text-emerald-400" : "text-red-400"}>

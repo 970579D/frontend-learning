@@ -23,7 +23,12 @@ export default function AdminExamPage() {
   const { user, ready } = useAuth();
   const [sessions, setSessions] = useState<ExamSession[]>([]);
   const [skills, setSkills] = useState<SkillData[]>([]);
-  const [form, setForm] = useState({ skill: "", exam_time: "", total_score: "100" });
+  const [form, setForm] = useState({
+    skill: "",
+    exam_time: "",
+    total_score: "100",
+    pass_percent: "50",
+  });
   const [openUuid, setOpenUuid] = useState<string | null>(null);
   const [bookings, setBookings] = useState<ExamBooking[]>([]);
   const [notice, setNotice] = useState<Notice>(null);
@@ -59,6 +64,7 @@ export default function AdminExamPage() {
       skill: form.skill,
       exam_time: new Date(form.exam_time).toISOString(),
       total_score: Number(form.total_score),
+      pass_percent: Number(form.pass_percent),
     });
     if (!isSuccess(res)) return showError(res);
 
@@ -99,9 +105,9 @@ export default function AdminExamPage() {
 
       <form
         onSubmit={createSession}
-        className="mb-8 flex flex-col gap-3 rounded-2xl border border-gray-800 bg-gray-900 p-5 sm:flex-row sm:items-end"
+        className="mb-8 flex flex-col gap-3 rounded-2xl border border-gray-800 bg-gray-900 p-5 sm:flex-row sm:flex-wrap sm:items-end"
       >
-        <label className="flex flex-1 flex-col gap-1 text-sm text-gray-400">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-sm text-gray-400">
           Skill
           <select
             className={inputClass}
@@ -118,7 +124,7 @@ export default function AdminExamPage() {
           </select>
         </label>
 
-        <label className="flex flex-1 flex-col gap-1 text-sm text-gray-400">
+        <label className="flex min-w-48 flex-1 flex-col gap-1 text-sm text-gray-400">
           Exam time
           <input
             type="datetime-local"
@@ -142,6 +148,19 @@ export default function AdminExamPage() {
           />
         </label>
 
+        <label className="flex w-32 flex-col gap-1 text-sm text-gray-400">
+          Pass percent
+          <input
+            type="number"
+            min={1}
+            max={100}
+            className={inputClass}
+            value={form.pass_percent}
+            onChange={(e) => setForm({ ...form, pass_percent: e.target.value })}
+            required
+          />
+        </label>
+
         <button className="rounded bg-blue-600 px-5 py-2 font-medium text-white hover:bg-blue-500">
           Create
         </button>
@@ -160,7 +179,7 @@ export default function AdminExamPage() {
                   <h2 className="text-lg font-semibold text-white">{s.skill}</h2>
                   <p className="text-sm text-gray-400">{fmt(s.exam_time)}</p>
                   <p className="text-xs text-gray-500">
-                    Total score {s.total_score} · pass at {s.pass_score}
+                    Total score {s.total_score} · pass {s.pass_percent}% ({s.pass_score})
                   </p>
                 </div>
 

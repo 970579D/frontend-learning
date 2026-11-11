@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import Login from "@/app/components/login/page";
 import Modal from "@/app/components/modal/page";
 import { api, isSuccess, LoginRequest } from "@/app/lib/api";
-import { useAuth } from "../lib/auth";
+import { useAuth } from "@/app/lib/auth";
+import { useGuestOnly } from "@/app/lib/guest";
 
 export default function CoachLoginPage() {
   const router = useRouter();
+  const { signIn } = useAuth();
+  const blocked = useGuestOnly();
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
 
   async function handleLogin(body: LoginRequest) {
     setLoading(true);
@@ -26,9 +28,18 @@ export default function CoachLoginPage() {
     }
   }
 
+  if (blocked) {
+    return <p className="mt-24 text-center text-gray-400">Loading...</p>;
+  }
+
   return (
     <>
-      <Login title="Coach Login" registerHref="/coach_register" onSubmit={handleLogin} loading={loading} />
+      <Login
+        title="Coach"
+        registerHref="/coach_register"
+        onSubmit={handleLogin}
+        loading={loading}
+      />
       <Modal
         open={!!errorMessage}
         type="error"

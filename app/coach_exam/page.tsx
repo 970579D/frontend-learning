@@ -101,7 +101,7 @@ export default function CoachExamPage() {
 
               {b.assessed ? (
                 <span className="rounded-full bg-blue-900/60 px-3 py-1 text-xs text-blue-300">
-                  Result saved
+                  Exam finished
                 </span>
               ) : b.verified ? (
                 <span className="rounded-full bg-emerald-900/60 px-3 py-1 text-xs text-emerald-300">
@@ -112,7 +112,7 @@ export default function CoachExamPage() {
                   Waiting for admin
                 </span>
               ) : b.session_status === "finished" ? (
-                <span className="rounded-full bg-gray-800 px-3 py-1 text-xs text-gray-400">Finished</span>
+                <span className="rounded-full bg-gray-800 px-3 py-1 text-xs text-gray-400">Session ended</span>
               ) : (
                 <button
                   type="button"
@@ -143,7 +143,7 @@ export default function CoachExamPage() {
                 <p className="font-semibold text-white">{s.skill}</p>
                 <p className="text-sm text-gray-400">{fmt(s.exam_time)}</p>
                 <p className="text-xs text-gray-500">
-                  Total score {s.total_score} · pass at {s.pass_score}
+                  Total score {s.total_score} · pass {s.pass_percent}% ({s.pass_score})
                 </p>
               </div>
 

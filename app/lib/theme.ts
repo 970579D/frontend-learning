@@ -12,8 +12,8 @@ export const roleTheme: Record<Role, { gradient: string; solid: string; ring: st
     ring: "ring-emerald-500",
   },
   admin: {
-    gradient: "from-violet-500 to-purple-600",
-    solid: "bg-violet-600",
-    ring: "ring-violet-500",
+    gradient: "from-[#92613a] to-[#5c3a1e]",
+    solid: "bg-[#7a4a24]",
+    ring: "ring-[#7a4a24]",
   },
 };

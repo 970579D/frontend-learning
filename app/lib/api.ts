@@ -81,6 +81,7 @@ export type ExamSession = {
   exam_time: string;
   skill: string;
   total_score: number;
+  pass_percent: number;
   pass_score: number;
   status: "open" | "closed" | "finished";
   booking_count: number;
@@ -208,7 +209,7 @@ export const api = {
   catalog_create_skill: (skill_name: string, category_name: string) =>
     request<SkillData>("/skill", json("POST", { skill_name, category_name })),
 
-  exam_create_session: (body: { skill: string; exam_time: string; total_score: number }) =>
+  exam_create_session: (body: { skill: string; exam_time: string; total_score: number; pass_percent: number }) =>
     request<ExamSession>("/exam/session", json("POST", body)),
   exam_sessions: () => request<ExamSession[]>("/exam/session"),
   exam_set_status: (uuid: string, status: ExamSession["status"]) =>
