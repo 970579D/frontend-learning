@@ -123,6 +123,12 @@ export type ExamAssessment = {
   result: "pass" | "fail" | null;
 };
 
+export type NameData = {
+  username: string;
+  firstname: string;
+  lastname: string;
+};
+
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
 
@@ -228,4 +234,8 @@ export const api = {
     request<ExamBooking>("/exam/booking", json("POST", { username, session_uuid: sessionUuid })),
   exam_check_in: (username: string, bookingUuid: string) =>
     request<ExamBooking>("/exam/check-in", json("POST", { username, booking_uuid: bookingUuid })),
+    name_coach: (username: string, body: { firstname: string; lastname: string }) =>
+    request<NameData>(`/coach/name/${enc(username)}`, json("PUT", body)),
+  name_learner: (username: string, body: { firstname: string; lastname: string }) =>
+    request<NameData>(`/learner/name/${enc(username)}`, json("PUT", body)),
 };

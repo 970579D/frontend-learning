@@ -27,11 +27,10 @@ export default function CoachProfilePage() {
         const p = Array.isArray(d) ? d[0] ?? null : d;
         setProfile(p);
 
-        // the DB is the source of truth: copy its photo to the local cache so the header shows it too
         try {
           if (p?.image_path) saveAvatar("coach", p.username, p.image_path);
           else if (p) removeAvatar("coach", p.username);
-        } catch { /* storage full: the profile still shows the DB value on next load */ }
+        } catch {}
       } else {
         setErrorMessage(res.message);
       }
@@ -57,9 +56,33 @@ export default function CoachProfilePage() {
     else removeAvatar("coach", profile.username);
   }
 
+  async function handleName(data: { firstname: string; lastname: string }) {
+    if (!profile) return false;
+
+    const res = await api.name_coach(profile.username, data);
+    if (!isSuccess(res)) {
+      setErrorMessage(res.message);
+      return false;
+    }
+
+    setProfile({
+      ...profile,
+      firstname: res.data?.firstname ?? data.firstname,
+      lastname: res.data?.lastname ?? data.lastname,
+    });
+    return true;
+  }
+
   return (
     <>
-      <Profile title="Coach" role="coach" profile={profile} loading={loading} onImageChange={handleImage} />
+      <Profile
+        title="Coach"
+        role="coach"
+        profile={profile}
+        loading={loading}
+        onImageChange={handleImage}
+        onNameChange={handleName}
+      />
       <Modal open={!!errorMessage} type="error" message={errorMessage} onClose={() => setErrorMessage("")} />
     </>
   );

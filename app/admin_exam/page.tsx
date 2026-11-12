@@ -29,8 +29,8 @@ export default function AdminExamPage() {
     total_score: "100",
     pass_percent: "50",
   });
-  const [openUuid, setOpenUuid] = useState<string | null>(null);
-  const [bookings, setBookings] = useState<ExamBooking[]>([]);
+  const [openUuids, setOpenUuids] = useState<string[]>([]);
+  const [bookings, setBookings] = useState<Record<string, ExamBooking[]>>({});
   const [notice, setNotice] = useState<Notice>(null);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function AdminExamPage() {
 
   async function loadBookings(uuid: string) {
     const res = await api.exam_session_bookings(uuid);
-    setBookings(isSuccess(res) ? res.data ?? [] : []);
+    setBookings((prev) => ({ ...prev, [uuid]: isSuccess(res) ? res.data ?? [] : [] }));
   }
 
   async function createSession(e: FormEvent) {
@@ -74,12 +74,11 @@ export default function AdminExamPage() {
   }
 
   async function toggle(uuid: string) {
-    if (openUuid === uuid) {
-      setOpenUuid(null);
+    if (openUuids.includes(uuid)) {
+      setOpenUuids((list) => list.filter((u) => u !== uuid));
       return;
     }
-    setOpenUuid(uuid);
-    setBookings([]);
+    setOpenUuids((list) => [...list, uuid]);
     await loadBookings(uuid);
   }
 
@@ -172,80 +171,86 @@ export default function AdminExamPage() {
         </p>
       ) : (
         <div className="flex flex-col gap-4">
-          {sessions.map((s) => (
-            <div key={s.uuid} className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">{s.skill}</h2>
-                  <p className="text-sm text-gray-400">{fmt(s.exam_time)}</p>
-                  <p className="text-xs text-gray-500">
-                    Total score {s.total_score} · pass {s.pass_percent}% ({s.pass_score})
-                  </p>
+          {sessions.map((s) => {
+            const isOpen = openUuids.includes(s.uuid);
+            const list = bookings[s.uuid] ?? [];
+
+            return (
+              <div key={s.uuid} className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">{s.skill}</h2>
+                    <p className="text-sm text-gray-400">{fmt(s.exam_time)}</p>
+                    <p className="text-xs text-gray-500">
+                      Total score {s.total_score} · pass {s.pass_percent}% ({s.pass_score})
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs ${statusCls[s.status]}`}>{s.status}</span>
+                    <select
+                      value={s.status}
+                      onChange={(e) => changeStatus(s.uuid, e.target.value as ExamSession["status"])}
+                      className="rounded border border-gray-700 bg-gray-800 p-1 text-xs text-gray-200"
+                    >
+                      <option value="open">open</option>
+                      <option value="closed">closed</option>
+                      <option value="finished">finished</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-3 py-1 text-xs ${statusCls[s.status]}`}>{s.status}</span>
-                  <select
-                    value={s.status}
-                    onChange={(e) => changeStatus(s.uuid, e.target.value as ExamSession["status"])}
-                    className="rounded border border-gray-700 bg-gray-800 p-1 text-xs text-gray-200"
-                  >
-                    <option value="open">open</option>
-                    <option value="closed">closed</option>
-                    <option value="finished">finished</option>
-                  </select>
-                </div>
-              </div>
+                <button
+                  type="button"
+                  onClick={() => toggle(s.uuid)}
+                  className="mt-3 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-200"
+                >
+                  <ChevronDown size={14} className={isOpen ? "rotate-180" : ""} />
+                  {s.booking_count} booking{s.booking_count === 1 ? "" : "s"}
+                </button>
 
-              <button
-                type="button"
-                onClick={() => toggle(s.uuid)}
-                className="mt-3 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-200"
-              >
-                <ChevronDown size={14} className={openUuid === s.uuid ? "rotate-180" : ""} />
-                {s.booking_count} booking{s.booking_count === 1 ? "" : "s"}
-              </button>
+                {isOpen && (
+                  <ul className="mt-3 divide-y divide-gray-800 text-sm">
+                    {list.length === 0 && <li className="py-2 text-gray-500">No bookings</li>}
 
-              {openUuid === s.uuid && (
-                <ul className="mt-3 divide-y divide-gray-800 text-sm">
-                  {bookings.length === 0 && <li className="py-2 text-gray-500">No bookings</li>}
-
-                  {bookings.map((b) => (
-                    <li key={b.uuid} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                      <div>
-                        <span className="text-gray-100">{b.username}</span>
-                        <span
-                          className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
-                            b.verified
-                              ? "bg-emerald-900/60 text-emerald-300"
-                              : b.checked_in
-                                ? "bg-amber-900/50 text-amber-300"
-                                : "bg-gray-800 text-gray-400"
-                          }`}
-                        >
-                          {b.verified ? "Attended" : b.checked_in ? "Checked in" : "Not checked in"}
-                        </span>
-                        {b.assessed && (
-                          <span className="ml-2 rounded-full bg-blue-900/60 px-2 py-0.5 text-xs text-blue-300">
-                            Assessed
+                    {list.map((b, index) => (
+                      <li key={b.uuid} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 text-right text-gray-500">{index + 1}.</span>
+                          <span className="text-gray-100">{b.username}</span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs ${
+                              b.verified
+                                ? "bg-emerald-900/60 text-emerald-300"
+                                : b.checked_in
+                                  ? "bg-amber-900/50 text-amber-300"
+                                  : "bg-gray-800 text-gray-400"
+                            }`}
+                          >
+                            {b.verified ? "Attended" : b.checked_in ? "Checked in" : "Not checked in"}
                           </span>
-                        )}
-                      </div>
+                          {b.assessed && (
+                            <span className="rounded-full bg-blue-900/60 px-2 py-0.5 text-xs text-blue-300">
+                              Assessed
+                            </span>
+                          )}
+                        </div>
 
-                      <button
-                        type="button"
-                        disabled={!b.checked_in || b.assessed}
-                        onClick={() => verify(b)}
-                        className="rounded border border-gray-700 px-3 py-1 text-xs text-gray-200 hover:bg-gray-800 disabled:opacity-40"
-                      >
-                        {b.verified ? "Unverify" : "Verify"}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+                        <button
+                          type="button"
+                          disabled={!b.checked_in || b.assessed}
+                          onClick={() => verify(b)}
+                          className="rounded border border-gray-700 px-3 py-1 text-xs text-gray-200 hover:bg-gray-800 disabled:opacity-40"
+                        >
+                          {b.verified ? "Unverify" : "Verify"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -1,12 +1,15 @@
 "use client";
 
-import { ChangeEvent, useRef, useState } from "react";
-import { BadgeCheck, Camera, Trash2, UserRound } from "lucide-react";
+import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { BadgeCheck, Camera, Pencil, Trash2, UserRound } from "lucide-react";
 import Modal from "@/app/components/modal/page";
-import { ProfileData, imageUrl } from "@/app/lib/api";
+import { imageUrl, ProfileData } from "@/app/lib/api";
 import type { Role } from "@/app/lib/auth";
-import { roleTheme } from "@/app/lib/theme";
 import { fileToAvatar, useAvatar } from "@/app/lib/avatar";
+import { roleTheme } from "@/app/lib/theme";
+
+type NameForm = { firstname: string; lastname: string };
+type Field = "firstname" | "lastname";
 
 type ProfileProps = {
   title: string;
@@ -14,16 +17,22 @@ type ProfileProps = {
   profile: ProfileData | null;
   loading: boolean;
   onImageChange: (blob: Blob | null) => void | Promise<void>;
-}
+  onNameChange: (data: NameForm) => Promise<boolean>;
+};
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString() : "-");
-const MAX_SIZE = 5 * 1024 * 1024;   // 5 MB
+const MAX_SIZE = 5 * 1024 * 1024;
+const inputClass =
+  "w-44 rounded border border-gray-700 bg-gray-800 p-1.5 text-right text-sm text-gray-100 outline-none focus:border-blue-500";
 
-export default function Profile({ title, role, profile, loading, onImageChange }: ProfileProps) {
+export default function Profile({ title, role, profile, loading, onImageChange, onNameChange }: ProfileProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const avatar = imageUrl(useAvatar(role, profile?.username));
-  const [error, setError] = useState("");
   const theme = roleTheme[role];
+  const [error, setError] = useState("");
+  const [editing, setEditing] = useState<Field | null>(null);
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -34,10 +43,37 @@ export default function Profile({ title, role, profile, loading, onImageChange }
     if (file.size > MAX_SIZE) return setError("Image must be smaller than 5 MB");
 
     try {
-      await onImageChange(await fileToAvatar(file));   // parent saves it to the DB
+      await onImageChange(await fileToAvatar(file));
     } catch {
       setError("Could not save this image");
     }
+  }
+
+  function startEdit(field: Field) {
+    if (!profile) return;
+    setValue(profile[field]);
+    setEditing(field);
+  }
+
+  async function handleSave(e: FormEvent) {
+    e.preventDefault();
+    if (!profile || !editing) return;
+
+    const next = value.trim();
+    if (!next) {
+      setError("This field is required");
+      return;
+    }
+
+    const data: NameForm = {
+      firstname: editing === "firstname" ? next : profile.firstname,
+      lastname: editing === "lastname" ? next : profile.lastname,
+    };
+
+    setSaving(true);
+    const ok = await onNameChange(data);
+    setSaving(false);
+    if (ok) setEditing(null);
   }
 
   if (loading) {
@@ -47,19 +83,18 @@ export default function Profile({ title, role, profile, loading, onImageChange }
     return <p className="mt-24 text-center text-gray-400">No profile data</p>;
   }
 
-  const rows: [string, string][] = [
-    ["Username", profile.username],
-    ["First name", profile.firstname],
-    ["Last name", profile.lastname],
-    ...(profile.status ? [["Status", profile.status] as [string, string]] : []),
-    ["Created", fmt(profile.create_date)],
-    ["Last update", fmt(profile.update_date)],
+  const rows: { label: string; value: string; field?: Field }[] = [
+    { label: "Username", value: profile.username },
+    { label: "First name", value: profile.firstname, field: "firstname" },
+    { label: "Last name", value: profile.lastname, field: "lastname" },
+    ...(profile.status ? [{ label: "Status", value: profile.status }] : []),
+    { label: "Created", value: fmt(profile.create_date) },
+    { label: "Last update", value: fmt(profile.update_date) },
   ];
 
   return (
     <div className="mx-auto mt-12 w-full max-w-lg rounded-2xl border border-gray-800 bg-gray-900 p-8 shadow-lg shadow-black/40">
       <div className="flex flex-col items-center gap-3 text-center">
-        {/* avatar with upload button */}
         <div className="relative">
           <div
             className={`flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br text-white ${theme.gradient}`}
@@ -82,13 +117,7 @@ export default function Profile({ title, role, profile, loading, onImageChange }
             <Camera size={16} />
           </button>
 
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFile}
-            className="hidden"
-          />
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
         </div>
 
         {avatar && (
@@ -109,14 +138,57 @@ export default function Profile({ title, role, profile, loading, onImageChange }
       </div>
 
       <dl className="mt-8 divide-y divide-gray-800">
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex justify-between py-3 text-sm">
-            <dt className="text-gray-400">{label}</dt>
-            <dd className="text-gray-100">{value}</dd>
+        {rows.map(({ label, value: text, field }) => (
+          <div key={label} className="flex min-h-12 items-center justify-between gap-3 py-2 text-sm">
+            <dt className="flex items-center gap-1 text-gray-400">
+              {label}
+              {field && editing !== field && (
+                <button
+                  type="button"
+                  onClick={() => startEdit(field)}
+                  aria-label={`Edit ${label.toLowerCase()}`}
+                  title={`Edit ${label.toLowerCase()}`}
+                  className="rounded-full p-1 text-gray-500 hover:bg-gray-800 hover:text-white"
+                >
+                  <Pencil size={13} />
+                </button>
+              )}
+            </dt>
+
+            <dd className="text-right text-gray-100">
+              {field && editing === field ? (
+                <form onSubmit={handleSave} className="flex items-center justify-end gap-2">
+                  <input
+                    className={inputClass}
+                    value={value}
+                    maxLength={50}
+                    onChange={(e) => setValue(e.target.value)}
+                    autoFocus
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-500 disabled:opacity-50"
+                  >
+                    {saving ? "..." : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => setEditing(null)}
+                    className="rounded border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                text
+              )}
+            </dd>
           </div>
         ))}
       </dl>
-
 
       {profile.skills && (
         <div className="mt-6">
@@ -132,10 +204,11 @@ export default function Profile({ title, role, profile, loading, onImageChange }
                     <span
                       key={s.skill_name}
                       title={passed ? "Exam passed" : "Exam not passed yet"}
-                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${passed
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${
+                        passed
                           ? "bg-emerald-900/60 text-emerald-300 ring-1 ring-emerald-500/50"
-                          : "bg-gray-800 text-gray-300 ring-1 ring-gray-500/50"
-                        }`}
+                          : "bg-gray-800 text-gray-300"
+                      }`}
                     >
                       {passed && <BadgeCheck size={12} />}
                       {s.skill_name}
@@ -143,6 +216,14 @@ export default function Profile({ title, role, profile, loading, onImageChange }
                   );
                 })}
               </div>
+              <p className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" /> Passed
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-gray-500" />   passed yet
+                </span>
+              </p>
             </>
           )}
         </div>
