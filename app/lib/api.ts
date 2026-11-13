@@ -129,6 +129,18 @@ export type NameData = {
   lastname: string;
 };
 
+export type SkillCoach = {
+  username: string;
+  firstname: string;
+  lastname: string;
+  image_path: string | null;
+  status: "pass" | "fail";
+  best_score: number;
+  best_total_score: number;
+  best_percent: number;
+  total_attempt: number;
+};
+
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
 
@@ -234,8 +246,10 @@ export const api = {
     request<ExamBooking>("/exam/booking", json("POST", { username, session_uuid: sessionUuid })),
   exam_check_in: (username: string, bookingUuid: string) =>
     request<ExamBooking>("/exam/check-in", json("POST", { username, booking_uuid: bookingUuid })),
-    name_coach: (username: string, body: { firstname: string; lastname: string }) =>
+  name_coach: (username: string, body: { firstname: string; lastname: string }) =>
     request<NameData>(`/coach/name/${enc(username)}`, json("PUT", body)),
   name_learner: (username: string, body: { firstname: string; lastname: string }) =>
     request<NameData>(`/learner/name/${enc(username)}`, json("PUT", body)),
+  skill_coaches: (skill_name: string) =>
+    request<SkillCoach[]>(`/skill/coach?skill_name=${enc(skill_name)}`),
 };

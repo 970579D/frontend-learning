@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   UserRound,
   ClipboardCheck,
+  Search,
 } from "lucide-react";
 import { useAuth, homeOf } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
@@ -117,6 +118,13 @@ export default function Header() {
                         Verification
                       </Link>
                     </>
+                  )}
+
+                  {user.role === "learner" && (
+                    <Link href="/learner_skill" className={itemClass}>
+                      <Search size={16} />
+                      Find coach
+                    </Link>
                   )}
 
                   {user.role === "admin" && (
