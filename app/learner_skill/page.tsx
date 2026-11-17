@@ -161,7 +161,7 @@ export default function LearnerSkillPage() {
 
                     {triedList.length > 0 && (
                       <>
-                        <h3 className="mt-5 text-sm text-gray-400">Took the exam, not passed yet</h3>
+                        <h3 className="mt-5 text-sm text-gray-400">Has not yet been successfully complete</h3>
                         <ul className="divide-y divide-gray-800">
                           {triedList.map((c, i) => (
                             <CoachRow key={c.username} coach={c} rank={i + 1} />

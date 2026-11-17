@@ -16,6 +16,11 @@ const statusCls = {
   finished: "bg-blue-900/60 text-blue-300",
 } as const;
 
+const TIME_SLOTS = Array.from({ length: 96 }, (_, i) => {
+  const h = String(Math.floor(i / 4)).padStart(2, "0");
+  const m = String((i % 4) * 15).padStart(2, "0");
+  return `${h}:${m}`;
+});
 type Notice = { type: "success" | "error"; message: string } | null;
 
 export default function AdminExamPage() {
@@ -25,6 +30,7 @@ export default function AdminExamPage() {
   const [skills, setSkills] = useState<SkillData[]>([]);
   const [form, setForm] = useState({
     skill: "",
+    exam_date: "",
     exam_time: "",
     total_score: "100",
     pass_percent: "50",
@@ -62,14 +68,14 @@ export default function AdminExamPage() {
     e.preventDefault();
     const res = await api.exam_create_session({
       skill: form.skill,
-      exam_time: new Date(form.exam_time).toISOString(),
+      exam_time: new Date(`${form.exam_date}T${form.exam_time}`).toISOString(),
       total_score: Number(form.total_score),
       pass_percent: Number(form.pass_percent),
     });
     if (!isSuccess(res)) return showError(res);
 
     setNotice({ type: "success", message: res.message });
-    setForm({ ...form, exam_time: "" });
+    setForm({ ...form, exam_date: "", exam_time: "" });
     await refreshSessions();
   }
 
@@ -123,15 +129,32 @@ export default function AdminExamPage() {
           </select>
         </label>
 
-        <label className="flex min-w-48 flex-1 flex-col gap-1 text-sm text-gray-400">
-          Exam time
+        <label className="flex min-w-40 flex-1 flex-col gap-1 text-sm text-gray-400">
+          Exam date
           <input
-            type="datetime-local"
+            type="date"
+            className={inputClass}
+            value={form.exam_date}
+            onChange={(e) => setForm({ ...form, exam_date: e.target.value })}
+            required
+          />
+        </label>
+
+        <label className="flex w-32 flex-col gap-1 text-sm text-gray-400">
+          Time
+          <select
             className={inputClass}
             value={form.exam_time}
             onChange={(e) => setForm({ ...form, exam_time: e.target.value })}
             required
-          />
+          >
+            <option value="">Select time</option>
+            {TIME_SLOTS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="flex w-32 flex-col gap-1 text-sm text-gray-400">
@@ -219,13 +242,12 @@ export default function AdminExamPage() {
                           <span className="w-6 text-right text-gray-500">{index + 1}.</span>
                           <span className="text-gray-100">{b.username}</span>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-xs ${
-                              b.verified
+                            className={`rounded-full px-2 py-0.5 text-xs ${b.verified
                                 ? "bg-emerald-900/60 text-emerald-300"
                                 : b.checked_in
                                   ? "bg-amber-900/50 text-amber-300"
                                   : "bg-gray-800 text-gray-400"
-                            }`}
+                              }`}
                           >
                             {b.verified ? "Attended" : b.checked_in ? "Checked in" : "Not checked in"}
                           </span>
