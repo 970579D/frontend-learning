@@ -36,7 +36,7 @@ export default function LearnerLoginPage() {
     <>
       <Login
         title="Learner"
-        registerHref="/learner_register"
+        registerHref="/learner_requirement"
         onSubmit={handleLogin}
         loading={loading}
       />

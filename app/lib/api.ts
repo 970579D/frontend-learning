@@ -1,3 +1,4 @@
+import type { Requirement } from "@/app/lib/requirement";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type LoginRequest = {
@@ -203,7 +204,8 @@ export const api = {
   logout_admin: (session: string) => request<unknown>("/login/logout/admin", json("PUT", { session })),
 
   register_coach: (body: RegisterRequest) => request<unknown>("/coach", json("POST", body)),
-  register_learner: (body: RegisterRequest) => request<unknown>("/learner", json("POST", body)),
+  register_learner: (body: RegisterRequest & { requirement: Requirement }) =>
+    request<unknown>("/learner", json("POST", body)),
 
   get_coach: (username: string) => request<ProfileData>(`/coach/${enc(username)}`, { method: "GET" }),
   get_learner: (username: string) => request<ProfileData>(`/learner/${enc(username)}`, { method: "GET" }),
