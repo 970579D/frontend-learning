@@ -1,64 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, UserRound } from "lucide-react";
+import { Check, Clock, UserRound } from "lucide-react";
+import ConfirmModal from "@/app/components/confirm/page";
 import Modal from "@/app/components/modal/page";
 import { useAuth } from "@/app/lib/auth";
 import { roleTheme } from "@/app/lib/theme";
-import { api, CategoryData, imageUrl, isSuccess, SkillCoach, SkillData } from "@/app/lib/api";
+import { api, CategoryData, imageUrl, isSuccess, LearnerRequest, SkillData } from "@/app/lib/api";
 
 type Notice = { type: "success" | "error"; message: string } | null;
 
-function CoachRow({ coach, rank }: { coach: SkillCoach; rank: number }) {
-  const photo = imageUrl(coach.image_path);
-  const passed = coach.status === "pass";
-
-  return (
-    <li className="flex items-center gap-3 py-3">
-      <span className="w-6 text-right text-sm text-gray-500">{rank}.</span>
-
-      <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-white ${roleTheme.coach.solid}`}
-      >
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <UserRound size={18} />
-        )}
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-gray-100">
-          {coach.firstname} {coach.lastname}
-        </p>
-        <p className="truncate text-xs text-gray-500">
-          {coach.username} · {coach.total_attempt} attempt{coach.total_attempt === 1 ? "" : "s"}
-        </p>
-      </div>
-
-      <div className="text-right">
-        <p className={`flex items-center justify-end gap-1 text-sm ${passed ? "text-emerald-300" : "text-gray-300"}`}>
-          {passed && <BadgeCheck size={14} />}
-          {coach.best_score}/{coach.best_total_score}
-        </p>
-        <p className="text-xs text-gray-500">{coach.best_percent}%</p>
-      </div>
-    </li>
-  );
-}
+const fmt = (iso: string) => new Date(iso).toLocaleDateString();
 
 export default function LearnerSkillPage() {
   const router = useRouter();
   const { user, ready } = useAuth();
-  const latest = useRef("");
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [skills, setSkills] = useState<SkillData[]>([]);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [coaches, setCoaches] = useState<SkillCoach[]>([]);
-  const [loadingCoaches, setLoadingCoaches] = useState(false);
+  const [requests, setRequests] = useState<LearnerRequest[]>([]);
+  const [target, setTarget] = useState<string | null>(null);
+  const [description, setDescription] = useState("");
+  const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (!ready) return;
@@ -66,40 +31,59 @@ export default function LearnerSkillPage() {
       router.replace("/learner_login");
       return;
     }
-    Promise.all([api.catalog_categories(), api.catalog_skills()]).then(([c, s]) => {
+
+    let cancelled = false;
+
+    Promise.all([
+      api.catalog_categories(),
+      api.catalog_skills(),
+      api.request_mine(user.username),
+    ]).then(([c, s, r]) => {
+      if (cancelled) return;
       if (isSuccess(c)) setCategories(c.data ?? []);
       if (isSuccess(s)) setSkills(s.data ?? []);
+      if (isSuccess(r)) setRequests(r.data ?? []);
+      else setNotice({ type: "error", message: r.message });
     });
-  }, [ready, user, router]);
 
-  async function selectSkill(name: string) {
-    latest.current = name;
-    setSelected(name);
-    setCoaches([]);
-    setLoadingCoaches(true);
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, user, router, tick]);
 
-    const res = await api.skill_coaches(name);
-    if (latest.current !== name) return;
+  function closeConfirm() {
+    setTarget(null);
+    setDescription("");
+  }
 
-    setLoadingCoaches(false);
-    if (isSuccess(res)) setCoaches(res.data ?? []);
-    else setNotice({ type: "error", message: res.message });
+  async function confirm() {
+    if (!user || !target) return;
+
+    setSending(true);
+    const res = await api.request_create(user.username, target, description.trim());
+    setSending(false);
+
+    closeConfirm();
+    setNotice({ type: isSuccess(res) ? "success" : "error", message: res.message });
+    if (isSuccess(res)) setTick((t) => t + 1);
   }
 
   if (!ready || !user || user.role !== "learner") {
     return <p className="mt-24 text-center text-gray-400">Loading...</p>;
   }
 
+  const requested = new Set(requests.map((r) => r.skill));
+
   const groups = categories
     .map((c) => ({ category: c, items: skills.filter((s) => s.category_name === c.category_name) }))
     .filter((g) => g.items.length > 0);
 
-  const passedList = coaches.filter((c) => c.status === "pass");
-  const triedList = coaches.filter((c) => c.status !== "pass");
-
   return (
     <div className="mx-auto mt-10 w-full max-w-5xl px-4 pb-16">
-      <h1 className="mb-6 text-2xl font-semibold text-white">Find a coach</h1>
+      <h1 className="text-2xl font-semibold text-white">Learn a skill</h1>
+      <p className="mb-6 mt-1 text-sm text-gray-400">
+        Choose a skill you want to learn. Coaches who passed it will see your request and can respond.
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
@@ -112,20 +96,26 @@ export default function LearnerSkillPage() {
               <div key={category.id} className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
                 <h2 className="text-lg font-semibold text-white">{category.category_name}</h2>
                 <div className="mt-4 flex flex-wrap gap-2 px-1">
-                  {items.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => selectSkill(s.skill_name)}
-                      className={`rounded-full px-4 py-1.5 text-sm transition ${
-                        selected === s.skill_name
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-800/60 text-gray-400 hover:text-gray-200"
-                      }`}
-                    >
-                      {s.skill_name}
-                    </button>
-                  ))}
+                  {items.map((s) => {
+                    const done = requested.has(s.skill_name);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        disabled={done}
+                        onClick={() => setTarget(s.skill_name)}
+                        title={done ? "Already requested" : "Request a coach for this skill"}
+                        className={`inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-sm transition ${
+                          done
+                            ? "bg-emerald-900/40 text-emerald-300"
+                            : "bg-gray-800/60 text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+                        }`}
+                      >
+                        {done && <Check size={14} />}
+                        {s.skill_name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))
@@ -134,48 +124,90 @@ export default function LearnerSkillPage() {
 
         <div className="lg:sticky lg:top-20 lg:self-start">
           <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-            {!selected ? (
-              <p className="py-8 text-center text-sm text-gray-500">Choose a skill to see its coaches</p>
-            ) : (
-              <>
-                <h2 className="text-lg font-semibold text-white">Coaches for {selected}</h2>
+            <h2 className="text-lg font-semibold text-white">My requests</h2>
 
-                {loadingCoaches ? (
-                  <p className="py-8 text-center text-sm text-gray-400">Loading...</p>
-                ) : coaches.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-gray-500">
-                    No coach has taken the exam for this skill yet
-                  </p>
-                ) : (
-                  <>
-                    <h3 className="mt-4 text-sm text-gray-400">Passed the exam</h3>
-                    {passedList.length === 0 ? (
-                      <p className="py-3 text-sm text-gray-600">No coach has passed yet</p>
-                    ) : (
-                      <ul className="divide-y divide-gray-800">
-                        {passedList.map((c, i) => (
-                          <CoachRow key={c.username} coach={c} rank={i + 1} />
-                        ))}
+            {requests.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-500">
+                You have not requested a skill yet
+              </p>
+            ) : (
+              <ul className="mt-2 divide-y divide-gray-800">
+                {requests.map((r) => (
+                  <li key={r.uuid} className="py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-gray-100">{r.skill}</p>
+                      {r.responses.length === 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/50 px-3 py-1 text-xs text-amber-300">
+                          <Clock size={12} />
+                          Waiting for coach response
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-emerald-900/60 px-3 py-1 text-xs text-emerald-300">
+                          {r.responses.length} coach{r.responses.length === 1 ? "" : "es"} responded
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-gray-500">{fmt(r.create_date)}</p>
+                    {r.description && <p className="mt-2 text-sm text-gray-400">{r.description}</p>}
+
+                    {r.responses.length > 0 && (
+                      <ul className="mt-3 flex flex-col gap-2">
+                        {r.responses.map((c) => {
+                          const photo = imageUrl(c.image_path);
+                          return (
+                            <li
+                              key={c.uuid}
+                              className="flex items-center gap-3 rounded-lg bg-gray-800/50 p-2.5"
+                            >
+                              <span
+                                className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-white ${roleTheme.coach.solid}`}
+                              >
+                                {photo ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={photo} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <UserRound size={16} />
+                                )}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm text-gray-100">
+                                  {c.firstname} {c.lastname}
+                                </p>
+                                <p className="truncate text-xs text-gray-500">{c.username}</p>
+                              </div>
+                              <span className="text-xs text-gray-500">{fmt(c.create_date)}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
-
-                    {triedList.length > 0 && (
-                      <>
-                        <h3 className="mt-5 text-sm text-gray-400">Has not yet been successfully complete</h3>
-                        <ul className="divide-y divide-gray-800">
-                          {triedList.map((c, i) => (
-                            <CoachRow key={c.username} coach={c} rank={i + 1} />
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </>
-                )}
-              </>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={!!target}
+        title={`Learn ${target ?? ""}?`}
+        message="Do you want to learn this skill? Coaches who passed it will see your request and can respond."
+        confirmLabel="Yes, request a coach"
+        loading={sending}
+        onConfirm={confirm}
+        onCancel={closeConfirm}
+      >
+        <textarea
+          value={description}
+          maxLength={500}
+          rows={3}
+          placeholder="Tell the coach what you want to learn (optional)"
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full resize-none rounded border border-gray-700 bg-gray-800 p-2 text-sm text-gray-100 placeholder-gray-500 outline-none focus:border-blue-500"
+        />
+      </ConfirmModal>
 
       <Modal
         open={!!notice}

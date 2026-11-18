@@ -16,6 +16,7 @@ import {
   UserRound,
   ClipboardCheck,
   Search,
+  Users,
 } from "lucide-react";
 import { useAuth, homeOf } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
@@ -116,6 +117,10 @@ export default function Header() {
                       <Link href="/coach_verification" className={itemClass}>
                         <ShieldCheck size={16} />
                         Verification
+                      </Link>
+                      <Link href="/coach_match" className={itemClass}>
+                        <Users size={16} />
+                        Match
                       </Link>
                     </>
                   )}

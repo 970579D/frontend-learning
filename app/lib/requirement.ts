@@ -159,3 +159,7 @@ export function useRequirement() {
 
   return { requirement, ready };
 }
+
+export function labelOf(key: RequirementKey, value: string): string {
+  return QUESTIONS.find((q) => q.key === key)?.options.find((o) => o.value === value)?.label ?? value;
+}

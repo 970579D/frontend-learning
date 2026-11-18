@@ -142,6 +142,50 @@ export type SkillCoach = {
   total_attempt: number;
 };
 
+export type RequirementInfo = {
+  level: string;
+  learning_for: string;
+  day: string;
+  time: string;
+  priority: string;
+  learning_mode: string;
+  place_to_learn: string;
+  province: string;
+};
+
+export type Responder = {
+  uuid: string;
+  username: string;
+  firstname: string;
+  lastname: string;
+  image_path: string | null;
+  create_date: string;
+};
+
+export type LearnerRequest = {
+  uuid: string;
+  skill: string;
+  description: string;
+  create_date: string;
+  responses: Responder[];
+};
+
+export type MatchRequest = {
+  uuid: string;
+  skill: string;
+  description: string;
+  create_date: string;
+  learner: {
+    username: string;
+    firstname: string;
+    lastname: string;
+    image_path: string | null;
+  };
+  requirement: RequirementInfo | null;
+  response_count: number;
+  responded: boolean;
+};
+
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
 
@@ -218,17 +262,14 @@ export const api = {
     request<ImageData>(`/coach/image/${enc(username)}`, { method: "DELETE" }),
   remove_image_learner: (username: string) =>
     request<ImageData>(`/learner/image/${enc(username)}`, { method: "DELETE" }),
-
   get_coach_assessment: (username: string) =>
     request<AssessmentData[]>(`/coach/assessment/${enc(username)}`, { method: "GET" }),
-
   catalog_categories: () => request<CategoryData[]>("/skill/category"),
   catalog_create_category: (category_name: string) =>
     request<CategoryData>("/skill/category", json("POST", { category_name })),
   catalog_skills: () => request<SkillData[]>("/skill"),
   catalog_create_skill: (skill_name: string, category_name: string) =>
     request<SkillData>("/skill", json("POST", { skill_name, category_name })),
-
   exam_create_session: (body: { skill: string; exam_time: string; total_score: number; pass_percent: number }) =>
     request<ExamSession>("/exam/session", json("POST", body)),
   exam_sessions: () => request<ExamSession[]>("/exam/session"),
@@ -241,7 +282,6 @@ export const api = {
   exam_assessments: () => request<ExamAssessment[]>("/exam/assessment"),
   exam_result: (bookingUuid: string, score: number) =>
     request<ExamResult>("/exam/result", json("POST", { booking_uuid: bookingUuid, score })),
-
   exam_open: (username: string) => request<ExamSession[]>(`/exam/open/${enc(username)}`),
   exam_my_bookings: (username: string) => request<ExamBooking[]>(`/exam/booking/${enc(username)}`),
   exam_book: (username: string, sessionUuid: string) =>
@@ -254,4 +294,12 @@ export const api = {
     request<NameData>(`/learner/name/${enc(username)}`, json("PUT", body)),
   skill_coaches: (skill_name: string) =>
     request<SkillCoach[]>(`/skill/coach?skill_name=${enc(skill_name)}`),
+    request_create: (username: string, skill: string, description: string) =>
+    request<LearnerRequest>("/request", json("POST", { username, skill, description })),
+  request_mine: (username: string) =>
+    request<LearnerRequest[]>(`/request/learner/${enc(username)}`),
+  request_match: (username: string) =>
+    request<MatchRequest[]>(`/request/coach/${enc(username)}`),
+  request_respond: (username: string, requestUuid: string) =>
+    request<unknown>("/request/response", json("POST", { username, request_uuid: requestUuid })),
 };
