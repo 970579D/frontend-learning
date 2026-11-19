@@ -43,7 +43,7 @@ export default function ConfirmModal({
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-sm rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/50"
+        className="w-full max-w-xl rounded-2xl border border-gray-800 bg-gray-900 p-6 shadow-xl shadow-black/50"
         onClick={(e) => e.stopPropagation()}
       >
         <GraduationCap className="mx-auto text-blue-400" size={48} strokeWidth={1.5} />

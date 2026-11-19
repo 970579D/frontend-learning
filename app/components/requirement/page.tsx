@@ -3,23 +3,47 @@
 import { FormEvent, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import CustomSelect from "@/app/components/custom_select/page";
-import { QUESTIONS, Requirement } from "@/app/lib/requirement";
+import type { Question } from "@/app/lib/requirement";
 
-type RequirementProps = {
+type WizardProps<T extends Record<string, string>> = {
   title: string;
-  onFinish: (answers: Requirement) => void;
+  questions: Question[];
+  onFinish: (answers: T) => void;
 };
 
 const SEARCH_AFTER = 8;
 
-export default function RequirementWizard({ title, onFinish }: RequirementProps) {
+const fieldClass =
+  "w-full rounded-lg border border-gray-700 bg-gray-800 p-3.5 text-sm text-gray-100 placeholder-gray-500 outline-none focus:border-blue-500";
+
+function isValid(question: Question, value: string): boolean {
+  if (question.type === "text") return value.trim() !== "";
+  if (question.type === "number") {
+    const n = Number(value);
+    return (
+      value !== "" &&
+      Number.isInteger(n) &&
+      n >= 0 &&
+      n <= (question.max ?? Number.MAX_SAFE_INTEGER)
+    );
+  }
+  return value !== "";
+}
+
+export default function QuestionWizard<T extends Record<string, string>>({
+  title,
+  questions,
+  onFinish,
+}: WizardProps<T>) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  const question = QUESTIONS[step];
+  const question = questions[step];
   const value = answers[question.key] ?? "";
-  const isLast = step === QUESTIONS.length - 1;
-  const searchable = question.options.length > SEARCH_AFTER;
+  const options = question.options ?? [];
+  const isLast = step === questions.length - 1;
+  const searchable = options.length > SEARCH_AFTER;
+  const valid = isValid(question, value);
 
   function choose(next: string) {
     setAnswers({ ...answers, [question.key]: next });
@@ -27,10 +51,13 @@ export default function RequirementWizard({ title, onFinish }: RequirementProps)
 
   function handleNext(e: FormEvent) {
     e.preventDefault();
-    if (!value) return;
+    if (!valid) return;
 
     if (isLast) {
-      onFinish(answers as Requirement);
+      const cleaned = Object.fromEntries(
+        Object.entries(answers).map(([key, text]) => [key, text.trim()]),
+      );
+      onFinish(cleaned as T);
       return;
     }
     setStep(step + 1);
@@ -43,18 +70,51 @@ export default function RequirementWizard({ title, onFinish }: RequirementProps)
     >
       <h2 className="text-xl font-semibold text-white">{title}</h2>
       <p className="mt-1 text-sm text-gray-400">
-        Question {step + 1} of {QUESTIONS.length}
+        Question {step + 1} of {questions.length}
       </p>
 
       <h3 className="mt-6 text-lg font-medium text-gray-100">
         {step + 1}. {question.title}
       </h3>
 
-      {searchable ? (
+      {question.type === "text" ? (
+        <div key={question.key} className="mt-4">
+          <textarea
+            value={value}
+            rows={6}
+            maxLength={question.max}
+            placeholder={question.placeholder}
+            onChange={(e) => choose(e.target.value)}
+            autoFocus
+            className={`${fieldClass} resize-none`}
+          />
+          {question.max && (
+            <p className="mt-1 text-right text-xs text-gray-500">
+              {value.length}/{question.max}
+            </p>
+          )}
+        </div>
+      ) : question.type === "number" ? (
+        <div key={question.key} className="mt-4 flex items-center gap-3">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={question.max}
+            step={1}
+            value={value}
+            placeholder={question.placeholder}
+            onChange={(e) => choose(e.target.value)}
+            autoFocus
+            className={fieldClass}
+          />
+          {question.unit && <span className="whitespace-nowrap text-sm text-gray-400">{question.unit}</span>}
+        </div>
+      ) : searchable ? (
         <div className="mt-4">
           <CustomSelect
             key={question.key}
-            options={question.options}
+            options={options}
             value={value}
             onChange={choose}
             placeholder="Select an option"
@@ -63,7 +123,7 @@ export default function RequirementWizard({ title, onFinish }: RequirementProps)
         </div>
       ) : (
         <div key={question.key} role="radiogroup" aria-label={question.title} className="mt-3">
-          {question.options.map((o, i) => {
+          {options.map((o, i) => {
             const selected = value === o.value;
             return (
               <button
@@ -88,7 +148,7 @@ export default function RequirementWizard({ title, onFinish }: RequirementProps)
 
       <button
         type="submit"
-        disabled={!value}
+        disabled={!valid}
         className="mt-5 w-full rounded-lg bg-blue-600 p-3.5 font-medium text-white transition hover:bg-blue-500 disabled:opacity-50"
       >
         {isLast ? "Finish" : "Next Question →"}

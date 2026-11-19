@@ -186,6 +186,14 @@ export type MatchRequest = {
   responded: boolean;
 };
 
+export type CoachDetailBody = {
+  about_coach: string;
+  course_description: string;
+  cost: number;
+  place_to_coach: string;
+  coaching_mode: string;
+};
+
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
 
@@ -247,7 +255,8 @@ export const api = {
   logout_learner: (session: string) => request<unknown>("/login/logout/learner", json("PUT", { session })),
   logout_admin: (session: string) => request<unknown>("/login/logout/admin", json("PUT", { session })),
 
-  register_coach: (body: RegisterRequest) => request<unknown>("/coach", json("POST", body)),
+  register_coach: (body: RegisterRequest & { detail: CoachDetailBody }) =>
+    request<unknown>("/coach", json("POST", body)),
   register_learner: (body: RegisterRequest & { requirement: Requirement }) =>
     request<unknown>("/learner", json("POST", body)),
 

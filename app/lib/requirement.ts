@@ -14,12 +14,16 @@ export type RequirementKey =
 
 export type Requirement = Record<RequirementKey, string>;
 
-type Option = { value: string; label: string };
+export type Option = { value: string; label: string };
 
 export type Question = {
-  key: RequirementKey;
+  key: string;
   title: string;
-  options: Option[];
+  type?: "choice" | "text" | "number";
+  options?: Option[];
+  placeholder?: string;
+  unit?: string;
+  max?: number;
 };
 
 const PROVINCES = [
@@ -44,7 +48,7 @@ export const QUESTIONS: Question[] = [
       { value: "junior_elementary", label: "Junior elementary" },
       { value: "senior_elementary", label: "Senior elementary" },
       { value: "junior_high", label: "Junior high" },
-      { value: "senior_high", label: "Senior high" },
+      { value: "senior_high", label: "Senior high (High School)" },
       { value: "university", label: "University" },
       { value: "working", label: "Working" },
     ],
@@ -161,5 +165,5 @@ export function useRequirement() {
 }
 
 export function labelOf(key: RequirementKey, value: string): string {
-  return QUESTIONS.find((q) => q.key === key)?.options.find((o) => o.value === value)?.label ?? value;
+  return QUESTIONS.find((q) => q.key === key)?.options?.find((o) => o.value === value)?.label ?? value;
 }

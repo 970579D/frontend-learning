@@ -36,7 +36,7 @@ export default function CoachLoginPage() {
     <>
       <Login
         title="Coach"
-        registerHref="/coach_register"
+        registerHref="/coach_detail"
         onSubmit={handleLogin}
         loading={loading}
       />
