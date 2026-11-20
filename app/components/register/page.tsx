@@ -8,19 +8,19 @@ type RegisterProps = {
   title: string;
   loginHref: string;
   onSubmit: (data: RegisterRequest) => void | Promise<void>;
-  error?: string;
   loading?: boolean;
 };
 
 const inputClass =
   "rounded border border-gray-700 bg-gray-800 p-2 text-gray-100 placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 
-export default function Register({ title, loginHref, onSubmit, error, loading }: RegisterProps) {
+export default function Register({ title, loginHref, onSubmit, loading }: RegisterProps) {
   const [form, setForm] = useState<RegisterRequest>({
     username: "",
     password: "",
     firstname: "",
     lastname: "",
+    phone: "",
   });
 
   const update = (key: keyof RegisterRequest) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -28,7 +28,7 @@ export default function Register({ title, loginHref, onSubmit, error, loading }:
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    onSubmit(form);   // just emit, the parent does the API call
+    onSubmit(form);
   }
 
   return (
@@ -38,12 +38,21 @@ export default function Register({ title, loginHref, onSubmit, error, loading }:
     >
       <h1 className="text-2xl font-semibold text-white">{title}</h1>
 
-      <input className={inputClass} placeholder="Username" value={form.username} onChange={update("username")} required />
-      <input className={inputClass} type="password" placeholder="Password" value={form.password} onChange={update("password")} required />
       <input className={inputClass} placeholder="First name" value={form.firstname} onChange={update("firstname")} required />
       <input className={inputClass} placeholder="Last name" value={form.lastname} onChange={update("lastname")} required />
-      
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      <input
+        className={inputClass}
+        type="tel"
+        inputMode="tel"
+        placeholder="Phone number"
+        pattern="\+?[0-9\s\-()]{9,20}"
+        title="9 to 15 digits, with an optional + at the start"
+        value={form.phone}
+        onChange={update("phone")}
+        required
+      />
+      <input className={inputClass} placeholder="Username" value={form.username} onChange={update("username")} required />
+      <input className={inputClass} type="password" placeholder="Password" value={form.password} onChange={update("password")} required />
 
       <button
         type="submit"

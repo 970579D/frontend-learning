@@ -9,6 +9,7 @@ export type LoginRequest = {
 export type RegisterRequest = LoginRequest & {
   firstname: string;
   lastname: string;
+  phone: string;
 };
 
 export type ApiResponse<T = unknown> = {
@@ -31,6 +32,7 @@ export type ProfileData = {
   firstname: string;
   lastname: string;
   status?: string;
+  phone?: string | null;
   image_path?: string | null;
   create_date: string;
   update_date: string;

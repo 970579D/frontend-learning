@@ -88,6 +88,7 @@ export default function Profile({ title, role, profile, loading, onImageChange, 
     { label: "First name", value: profile.firstname, field: "firstname" },
     { label: "Last name", value: profile.lastname, field: "lastname" },
     ...(profile.status ? [{ label: "Status", value: profile.status }] : []),
+    { label: "Phone", value: profile.phone || "-" },
     { label: "Created", value: fmt(profile.create_date) },
     { label: "Last update", value: fmt(profile.update_date) },
   ];
