@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, UserRound } from "lucide-react";
 import Modal from "@/app/components/modal/page";
+import PhoneButton from "@/app/components/phone_button/page";
 import { useAuth } from "@/app/lib/auth";
 import { labelOf, RequirementKey } from "@/app/lib/requirement";
 import { roleTheme } from "@/app/lib/theme";
@@ -55,16 +56,11 @@ export default function CoachMatchPage() {
     };
   }, [ready, user, router, tick]);
 
-  async function respond(requestUuid: string) {
-    if (!user) return;
-    const res = await api.request_respond(user.username, requestUuid);
-    setNotice({ type: isSuccess(res) ? "success" : "error", message: res.message });
-    if (isSuccess(res)) setTick((t) => t + 1);
-  }
-
   if (!ready || !user || user.role !== "coach") {
     return <p className="mt-24 text-center text-gray-400">Loading...</p>;
   }
+
+  const username = user.username;
 
   return (
     <div className="mx-auto mt-10 w-full max-w-3xl px-4 pb-16">
@@ -134,18 +130,8 @@ export default function CoachMatchPage() {
                   <p className="mt-4 text-xs text-gray-600">This learner has no requirement answers</p>
                 )}
 
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <p className="text-xs text-gray-500">
-                    {r.response_count} coach{r.response_count === 1 ? "" : "es"} responded
-                  </p>
-                  <button
-                    type="button"
-                    disabled={r.responded}
-                    onClick={() => respond(r.uuid)}
-                    className="rounded bg-emerald-600 px-4 py-1.5 text-sm text-white hover:bg-emerald-500 disabled:opacity-40"
-                  >
-                    {r.responded ? "Responded" : "Select this learner"}
-                  </button>
+                <div className="mt-4 flex justify-end">
+                  <PhoneButton load={() => api.request_learner_phone(username, r.uuid)} />
                 </div>
               </li>
             );

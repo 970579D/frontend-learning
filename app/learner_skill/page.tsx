@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Clock, UserRound } from "lucide-react";
+import { Check, Clock } from "lucide-react";
 import ConfirmModal from "@/app/components/confirm/page";
 import Modal from "@/app/components/modal/page";
 import { useAuth } from "@/app/lib/auth";
-import { roleTheme } from "@/app/lib/theme";
-import { api, CategoryData, imageUrl, isSuccess, LearnerRequest, SkillData } from "@/app/lib/api";
+import { api, CategoryData, isSuccess, LearnerRequest, SkillData } from "@/app/lib/api";
 
 type Notice = { type: "success" | "error"; message: string } | null;
 
@@ -82,7 +82,7 @@ export default function LearnerSkillPage() {
     <div className="mx-auto mt-10 w-full max-w-5xl px-4 pb-16">
       <h1 className="text-2xl font-semibold text-white">Learn a skill</h1>
       <p className="mb-6 mt-1 text-sm text-gray-400">
-        Choose a skill you want to learn. Coaches who passed it will see your request and can respond.
+        Choose a skill you want to learn. Coaches who passed it are listed on your Match page.
       </p>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -124,7 +124,14 @@ export default function LearnerSkillPage() {
 
         <div className="lg:sticky lg:top-20 lg:self-start">
           <div className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-            <h2 className="text-lg font-semibold text-white">My requests</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-white">My requests</h2>
+              {requests.length > 0 && (
+                <Link href="/learner_match" className="text-sm text-blue-400 hover:underline">
+                  View matching coaches →
+                </Link>
+              )}
+            </div>
 
             {requests.length === 0 ? (
               <p className="py-8 text-center text-sm text-gray-500">
@@ -136,52 +143,13 @@ export default function LearnerSkillPage() {
                   <li key={r.uuid} className="py-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium text-gray-100">{r.skill}</p>
-                      {r.responses.length === 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/50 px-3 py-1 text-xs text-amber-300">
-                          <Clock size={12} />
-                          Waiting for coach response
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-emerald-900/60 px-3 py-1 text-xs text-emerald-300">
-                          {r.responses.length} coach{r.responses.length === 1 ? "" : "es"} responded
-                        </span>
-                      )}
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/50 px-3 py-1 text-xs text-amber-300">
+                        <Clock size={12} />
+                        Waiting for coach
+                      </span>
                     </div>
-
                     <p className="text-xs text-gray-500">{fmt(r.create_date)}</p>
                     {r.description && <p className="mt-2 text-sm text-gray-400">{r.description}</p>}
-
-                    {r.responses.length > 0 && (
-                      <ul className="mt-3 flex flex-col gap-2">
-                        {r.responses.map((c) => {
-                          const photo = imageUrl(c.image_path);
-                          return (
-                            <li
-                              key={c.uuid}
-                              className="flex items-center gap-3 rounded-lg bg-gray-800/50 p-2.5"
-                            >
-                              <span
-                                className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-white ${roleTheme.coach.solid}`}
-                              >
-                                {photo ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={photo} alt="" className="h-full w-full object-cover" />
-                                ) : (
-                                  <UserRound size={16} />
-                                )}
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm text-gray-100">
-                                  {c.firstname} {c.lastname}
-                                </p>
-                                <p className="truncate text-xs text-gray-500">{c.username}</p>
-                              </div>
-                              <span className="text-xs text-gray-500">{fmt(c.create_date)}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
                   </li>
                 ))}
               </ul>
@@ -193,7 +161,7 @@ export default function LearnerSkillPage() {
       <ConfirmModal
         open={!!target}
         title={`Learn ${target ?? ""}?`}
-        message="Do you want to learn this skill? Coaches who passed it will see your request and can respond."
+        message="Do you want to learn this skill? Matching coaches will be listed on your Match page."
         confirmLabel="Yes, request a coach"
         loading={sending}
         onConfirm={confirm}

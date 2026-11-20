@@ -17,6 +17,7 @@ import {
   ClipboardCheck,
   Search,
   Users,
+  UserCheck,
 } from "lucide-react";
 import { useAuth, homeOf } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
@@ -126,10 +127,16 @@ export default function Header() {
                   )}
 
                   {user.role === "learner" && (
-                    <Link href="/learner_skill" className={itemClass}>
-                      <Search size={16} />
-                      Find coach
-                    </Link>
+                    <>
+                      <Link href="/learner_skill" className={itemClass}>
+                        <Search size={16} />
+                        Learn a skill
+                      </Link>
+                      <Link href="/learner_match" className={itemClass}>
+                        <UserCheck size={16} />
+                        Match
+                      </Link>
+                    </>
                   )}
 
                   {user.role === "admin" && (

@@ -164,13 +164,38 @@ export type Responder = {
   create_date: string;
 };
 
+export type CoachDetailBody = {
+  about_coach: string;
+  course_description: string;
+  cost: number;
+  place_to_coach: string;
+  coaching_mode: string;
+};
+
 export type LearnerRequest = {
   uuid: string;
   skill: string;
   description: string;
   create_date: string;
-  responses: Responder[];
 };
+
+export type MatchCoach = {
+  username: string;
+  firstname: string;
+  lastname: string;
+  image_path: string | null;
+  about_coach: string | null;
+  course_description: string | null;
+  cost: number | null;
+  place_to_coach: string | null;
+  coaching_mode: string | null;
+  best_score: number;
+  best_total_score: number;
+  best_percent: number;
+  total_attempt: number;
+};
+
+export type LearnerMatch = LearnerRequest & { coaches: MatchCoach[] };
 
 export type MatchRequest = {
   uuid: string;
@@ -184,16 +209,11 @@ export type MatchRequest = {
     image_path: string | null;
   };
   requirement: RequirementInfo | null;
-  response_count: number;
-  responded: boolean;
 };
 
-export type CoachDetailBody = {
-  about_coach: string;
-  course_description: string;
-  cost: number;
-  place_to_coach: string;
-  coaching_mode: string;
+export type PhoneData = {
+  username: string;
+  phone: string | null;
 };
 
 export const isSuccess = (res: ApiResponse<unknown>) =>
@@ -305,7 +325,7 @@ export const api = {
     request<NameData>(`/learner/name/${enc(username)}`, json("PUT", body)),
   skill_coaches: (skill_name: string) =>
     request<SkillCoach[]>(`/skill/coach?skill_name=${enc(skill_name)}`),
-    request_create: (username: string, skill: string, description: string) =>
+  request_create: (username: string, skill: string, description: string) =>
     request<LearnerRequest>("/request", json("POST", { username, skill, description })),
   request_mine: (username: string) =>
     request<LearnerRequest[]>(`/request/learner/${enc(username)}`),
@@ -313,4 +333,10 @@ export const api = {
     request<MatchRequest[]>(`/request/coach/${enc(username)}`),
   request_respond: (username: string, requestUuid: string) =>
     request<unknown>("/request/response", json("POST", { username, request_uuid: requestUuid })),
+  request_match_learner: (username: string) =>
+    request<LearnerMatch[]>(`/request/learner/${enc(username)}/match`),
+  request_coach_phone: (learner: string, coach: string) =>
+    request<PhoneData>(`/request/learner/${enc(learner)}/phone/${enc(coach)}`),
+  request_learner_phone: (coach: string, requestUuid: string) =>
+    request<PhoneData>(`/request/coach/${enc(coach)}/phone/${requestUuid}`),
 };

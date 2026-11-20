@@ -242,12 +242,13 @@ export default function AdminExamPage() {
                           <span className="w-6 text-right text-gray-500">{index + 1}.</span>
                           <span className="text-gray-100">{b.username}</span>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-xs ${b.verified
+                            className={`rounded-full px-2 py-0.5 text-xs ${
+                              b.verified
                                 ? "bg-emerald-900/60 text-emerald-300"
                                 : b.checked_in
                                   ? "bg-amber-900/50 text-amber-300"
                                   : "bg-gray-800 text-gray-400"
-                              }`}
+                            }`}
                           >
                             {b.verified ? "Attended" : b.checked_in ? "Checked in" : "Not checked in"}
                           </span>
