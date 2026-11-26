@@ -21,8 +21,8 @@ function CoachCard({ coach, rank, learner }: { coach: MatchCoach; rank: number; 
 
   return (
     <li className="py-5">
-      <div className="flex items-center gap-3">
-        <span className="w-6 text-right text-sm text-gray-500">{rank}.</span>
+      <div className="flex items-start gap-3">
+        <span className="w-6 pt-3 text-right text-sm text-gray-500">{rank}.</span>
 
         <span
           className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-white ${roleTheme.coach.solid}`}
@@ -39,26 +39,14 @@ function CoachCard({ coach, rank, learner }: { coach: MatchCoach; rank: number; 
           <p className="truncate font-semibold text-white">
             {coach.firstname} {coach.lastname}
           </p>
-          <p className="truncate text-xs text-gray-500">
-            {coach.username} · {coach.total_attempt} attempt{coach.total_attempt === 1 ? "" : "s"}
-          </p>
-        </div>
-
-        <div className="text-right">
-          <p className="flex items-center justify-end gap-1 text-sm text-emerald-300">
-            <BadgeCheck size={14} />
-            {coach.best_score}/{coach.best_total_score}
-          </p>
-          <p className="text-xs text-gray-500">{coach.best_percent}%</p>
+          {coach.about_coach && <p className="mt-1 text-sm text-gray-500">{coach.about_coach}</p>}
         </div>
       </div>
 
       {hasDetail ? (
         <div className="mt-3 pl-9">
-          <p className="text-sm text-gray-300">{coach.about_coach}</p>
-
           {coach.course_description && (
-            <div className="mt-3">
+            <div>
               <p className="text-xs text-gray-500">Course</p>
               <p className="text-sm text-gray-300">{coach.course_description}</p>
             </div>
@@ -67,19 +55,19 @@ function CoachCard({ coach, rank, learner }: { coach: MatchCoach; rank: number; 
           <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-xs text-gray-500">Cost</dt>
-              <dd className="text-gray-100">
+              <dd className="text-gray-300">
                 {coach.cost !== null ? `${coach.cost.toLocaleString()} THB per hour` : "-"}
               </dd>
             </div>
             <div>
               <dt className="text-xs text-gray-500">Place</dt>
-              <dd className="text-gray-100">
+              <dd className="text-gray-300">
                 {coach.place_to_coach ? labelOf("place_to_learn", coach.place_to_coach) : "-"}
               </dd>
             </div>
             <div>
               <dt className="text-xs text-gray-500">Mode</dt>
-              <dd className="text-gray-100">
+              <dd className="text-gray-300">
                 {coach.coaching_mode ? labelOf("learning_mode", coach.coaching_mode) : "-"}
               </dd>
             </div>
@@ -166,7 +154,7 @@ export default function LearnerMatchPage() {
                 <span className="text-xs text-gray-500">requested {fmt(r.create_date)}</span>
               </div>
 
-              {r.description && <p className="mt-2 text-sm text-gray-400">{r.description}</p>}
+              {r.description && <p className="mt-2 text-sm text-gray-400">Learning for: {r.description}</p>}
 
               {r.coaches.length === 0 ? (
                 <p className="py-6 text-center text-sm text-gray-500">

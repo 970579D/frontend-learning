@@ -9,6 +9,7 @@ import { useAuth } from "@/app/lib/auth";
 import { labelOf, RequirementKey } from "@/app/lib/requirement";
 import { roleTheme } from "@/app/lib/theme";
 import { api, imageUrl, isSuccess, MatchRequest } from "@/app/lib/api";
+import { formatDateTime } from "../lib/utils";
 
 type Notice = { type: "success" | "error"; message: string } | null;
 
@@ -22,8 +23,6 @@ const FIELDS: { key: RequirementKey; label: string }[] = [
   { key: "place_to_learn", label: "Place" },
   { key: "province", label: "Province" },
 ];
-
-const fmt = (iso: string) => new Date(iso).toLocaleDateString();
 
 export default function CoachMatchPage() {
   const router = useRouter();
@@ -106,9 +105,7 @@ export default function CoachMatchPage() {
                       <p className="font-semibold text-white">
                         {r.learner.firstname} {r.learner.lastname}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {r.learner.username} · requested {fmt(r.create_date)}
-                      </p>
+                      <p className="text-xs text-gray-500">requested {formatDateTime(r.create_date)}</p>
                     </div>
                   </div>
 

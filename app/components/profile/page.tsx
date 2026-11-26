@@ -7,6 +7,7 @@ import { imageUrl, ProfileData } from "@/app/lib/api";
 import type { Role } from "@/app/lib/auth";
 import { fileToAvatar, useAvatar } from "@/app/lib/avatar";
 import { roleTheme } from "@/app/lib/theme";
+import { formatDateTime } from "@/app/lib/utils";
 
 type NameForm = { firstname: string; lastname: string };
 type Field = "firstname" | "lastname";
@@ -87,10 +88,9 @@ export default function Profile({ title, role, profile, loading, onImageChange, 
     { label: "Username", value: profile.username },
     { label: "First name", value: profile.firstname, field: "firstname" },
     { label: "Last name", value: profile.lastname, field: "lastname" },
-    ...(profile.status ? [{ label: "Status", value: profile.status }] : []),
     { label: "Phone", value: profile.phone || "-" },
-    { label: "Created", value: fmt(profile.create_date) },
-    { label: "Last update", value: fmt(profile.update_date) },
+    { label: "Created", value: formatDateTime(profile.create_date) },
+    { label: "Last update", value: formatDateTime(profile.update_date) },
   ];
 
   return (
@@ -205,11 +205,10 @@ export default function Profile({ title, role, profile, loading, onImageChange, 
                     <span
                       key={s.skill_name}
                       title={passed ? "Exam passed" : "Exam not passed yet"}
-                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${
-                        passed
-                          ? "bg-emerald-900/60 text-emerald-300 ring-1 ring-emerald-500/50"
-                          : "bg-gray-800 text-gray-300"
-                      }`}
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs ${passed
+                        ? "bg-emerald-900/60 text-emerald-300 ring-1 ring-emerald-500/50"
+                        : "bg-gray-800 text-gray-300"
+                        }`}
                     >
                       {passed && <BadgeCheck size={12} />}
                       {s.skill_name}
