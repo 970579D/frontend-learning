@@ -18,6 +18,7 @@ import {
   Search,
   Users,
   UserCheck,
+  Lightbulb,
 } from "lucide-react";
 import { useAuth, homeOf } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
@@ -148,6 +149,10 @@ export default function Header() {
                       <Link href="/admin_skill" className={itemClass}>
                         <Award size={16} />
                         Skill
+                      </Link>
+                      <Link href="/admin_requested_skill" className={itemClass}>
+                        <Lightbulb size={16} />
+                        Requested skill
                       </Link>
                       <Link href="/admin_exam" className={itemClass}>
                         <CalendarClock size={16} />

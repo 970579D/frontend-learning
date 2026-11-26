@@ -16,11 +16,18 @@ const statusCls = {
   finished: "bg-blue-900/60 text-blue-300",
 } as const;
 
-const TIME_SLOTS = Array.from({ length: 96 }, (_, i) => {
-  const h = String(Math.floor(i / 4)).padStart(2, "0");
-  const m = String((i % 4) * 15).padStart(2, "0");
-  return `${h}:${m}`;
+const TIME_SLOTS = Array.from({ length: 53 }, (_, i) => {
+  const total = 8 * 60 + i * 15;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 });
+
+const todayString = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const isExpired = (s: ExamSession) => new Date(s.exam_time).getTime() < Date.now();
+
 type Notice = { type: "success" | "error"; message: string } | null;
 
 export default function AdminExamPage() {
@@ -95,13 +102,106 @@ export default function AdminExamPage() {
   }
 
   async function verify(b: ExamBooking) {
-    const res = await api.exam_verify(b.uuid, !b.verified);
+    const res = await api.exam_verify(b.uuid, true);
     if (!isSuccess(res)) return showError(res);
     await loadBookings(b.session_uuid);
   }
 
   if (!ready || !user || user.role !== "admin") {
     return <p className="mt-24 text-center text-gray-400">Loading...</p>;
+  }
+
+  const activeSessions = sessions
+    .filter((s) => !isExpired(s))
+    .sort((a, b) => a.exam_time.localeCompare(b.exam_time));
+  const expiredSessions = sessions.filter(isExpired);
+
+  function renderSession(s: ExamSession, expired: boolean) {
+    const isOpen = openUuids.includes(s.uuid);
+    const list = bookings[s.uuid] ?? [];
+
+    return (
+      <div
+        key={s.uuid}
+        className={`rounded-2xl border border-gray-800 bg-gray-900 p-5 ${expired ? "opacity-60" : ""}`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-white">{s.skill}</h2>
+            <p className="text-sm text-gray-400">{fmt(s.exam_time)}</p>
+            <p className="text-xs text-gray-500">
+              Total score {s.total_score} · pass {s.pass_percent}% ({s.pass_score})
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {expired && (
+              <span className="rounded-full bg-red-900/50 px-3 py-1 text-xs text-red-300">expired</span>
+            )}
+            <span className={`rounded-full px-3 py-1 text-xs ${statusCls[s.status]}`}>{s.status}</span>
+            <select
+              value={s.status}
+              onChange={(e) => changeStatus(s.uuid, e.target.value as ExamSession["status"])}
+              className="rounded border border-gray-700 bg-gray-800 p-1 text-xs text-gray-200"
+            >
+              <option value="open">open</option>
+              <option value="closed">closed</option>
+              <option value="finished">finished</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => toggle(s.uuid)}
+          className="mt-3 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-200"
+        >
+          <ChevronDown size={14} className={isOpen ? "rotate-180" : ""} />
+          {s.booking_count} booking{s.booking_count === 1 ? "" : "s"}
+        </button>
+
+        {isOpen && (
+          <ul className="mt-3 divide-y divide-gray-800 text-sm">
+            {list.length === 0 && <li className="py-2 text-gray-500">No bookings</li>}
+
+            {list.map((b, index) => (
+              <li key={b.uuid} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 text-right text-gray-500">{index + 1}.</span>
+                  <span className="text-gray-100">{b.username}</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs ${
+                      b.verified
+                        ? "bg-emerald-900/60 text-emerald-300"
+                        : b.checked_in
+                          ? "bg-amber-900/50 text-amber-300"
+                          : "bg-gray-800 text-gray-400"
+                    }`}
+                  >
+                    {b.verified ? "Attended" : b.checked_in ? "Checked in" : "Not checked in"}
+                  </span>
+                  {b.assessed && (
+                    <span className="rounded-full bg-blue-900/60 px-2 py-0.5 text-xs text-blue-300">
+                      Assessed
+                    </span>
+                  )}
+                </div>
+
+                {b.checked_in && !b.verified && (
+                  <button
+                    type="button"
+                    onClick={() => verify(b)}
+                    className="rounded border border-gray-700 px-3 py-1 text-xs text-gray-200 hover:bg-gray-800"
+                  >
+                    Verify
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -133,6 +233,7 @@ export default function AdminExamPage() {
           Exam date
           <input
             type="date"
+            min={todayString()}
             className={inputClass}
             value={form.exam_date}
             onChange={(e) => setForm({ ...form, exam_date: e.target.value })}
@@ -193,88 +294,16 @@ export default function AdminExamPage() {
           No exam sessions yet
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
-          {sessions.map((s) => {
-            const isOpen = openUuids.includes(s.uuid);
-            const list = bookings[s.uuid] ?? [];
+        <>
+          <div className="flex flex-col gap-4">{activeSessions.map((s) => renderSession(s, false))}</div>
 
-            return (
-              <div key={s.uuid} className="rounded-2xl border border-gray-800 bg-gray-900 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">{s.skill}</h2>
-                    <p className="text-sm text-gray-400">{fmt(s.exam_time)}</p>
-                    <p className="text-xs text-gray-500">
-                      Total score {s.total_score} · pass {s.pass_percent}% ({s.pass_score})
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-3 py-1 text-xs ${statusCls[s.status]}`}>{s.status}</span>
-                    <select
-                      value={s.status}
-                      onChange={(e) => changeStatus(s.uuid, e.target.value as ExamSession["status"])}
-                      className="rounded border border-gray-700 bg-gray-800 p-1 text-xs text-gray-200"
-                    >
-                      <option value="open">open</option>
-                      <option value="closed">closed</option>
-                      <option value="finished">finished</option>
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => toggle(s.uuid)}
-                  className="mt-3 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-200"
-                >
-                  <ChevronDown size={14} className={isOpen ? "rotate-180" : ""} />
-                  {s.booking_count} booking{s.booking_count === 1 ? "" : "s"}
-                </button>
-
-                {isOpen && (
-                  <ul className="mt-3 divide-y divide-gray-800 text-sm">
-                    {list.length === 0 && <li className="py-2 text-gray-500">No bookings</li>}
-
-                    {list.map((b, index) => (
-                      <li key={b.uuid} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="w-6 text-right text-gray-500">{index + 1}.</span>
-                          <span className="text-gray-100">{b.username}</span>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs ${
-                              b.verified
-                                ? "bg-emerald-900/60 text-emerald-300"
-                                : b.checked_in
-                                  ? "bg-amber-900/50 text-amber-300"
-                                  : "bg-gray-800 text-gray-400"
-                            }`}
-                          >
-                            {b.verified ? "Attended" : b.checked_in ? "Checked in" : "Not checked in"}
-                          </span>
-                          {b.assessed && (
-                            <span className="rounded-full bg-blue-900/60 px-2 py-0.5 text-xs text-blue-300">
-                              Assessed
-                            </span>
-                          )}
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={!b.checked_in || b.assessed}
-                          onClick={() => verify(b)}
-                          className="rounded border border-gray-700 px-3 py-1 text-xs text-gray-200 hover:bg-gray-800 disabled:opacity-40"
-                        >
-                          {b.verified ? "Unverify" : "Verify"}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
+          {expiredSessions.length > 0 && (
+            <>
+              <h2 className="mb-3 mt-8 text-sm text-gray-400">Expired sessions</h2>
+              <div className="flex flex-col gap-4">{expiredSessions.map((s) => renderSession(s, true))}</div>
+            </>
+          )}
+        </>
       )}
 
       <Modal
