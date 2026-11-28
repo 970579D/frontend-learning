@@ -28,6 +28,11 @@ const todayString = () => {
 
 const isExpired = (s: ExamSession) => new Date(s.exam_time).getTime() < Date.now();
 
+const dayLabel = (iso: string) => {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
+
 type Notice = { type: "success" | "error"; message: string } | null;
 
 export default function AdminExamPage() {
@@ -116,6 +121,14 @@ export default function AdminExamPage() {
     .sort((a, b) => a.exam_time.localeCompare(b.exam_time));
   const expiredSessions = sessions.filter(isExpired);
 
+  const expiredGroups = Object.entries(
+    expiredSessions.reduce<Record<string, ExamSession[]>>((acc, s) => {
+      const day = dayLabel(s.exam_time);
+      (acc[day] ??= []).push(s);
+      return acc;
+    }, {}),
+  );
+
   function renderSession(s: ExamSession, expired: boolean) {
     const isOpen = openUuids.includes(s.uuid);
     const list = bookings[s.uuid] ?? [];
@@ -135,9 +148,6 @@ export default function AdminExamPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {expired && (
-              <span className="rounded-full bg-red-900/50 px-3 py-1 text-xs text-red-300">expired</span>
-            )}
             <span className={`rounded-full px-3 py-1 text-xs ${statusCls[s.status]}`}>{s.status}</span>
             <select
               value={s.status}
@@ -299,8 +309,14 @@ export default function AdminExamPage() {
 
           {expiredSessions.length > 0 && (
             <>
-              <h2 className="mb-3 mt-8 text-sm text-gray-400">Expired sessions</h2>
-              <div className="flex flex-col gap-4">{expiredSessions.map((s) => renderSession(s, true))}</div>
+              <h2 className="mb-1 mt-8 text-sm font-medium text-gray-300">Expired sessions</h2>
+
+              {expiredGroups.map(([day, list]) => (
+                <div key={day} className="mt-3">
+                  <p className="mb-2 text-xs text-gray-500">{day}</p>
+                  <div className="flex flex-col gap-4">{list.map((s) => renderSession(s, true))}</div>
+                </div>
+              ))}
             </>
           )}
         </>

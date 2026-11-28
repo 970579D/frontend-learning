@@ -19,8 +19,16 @@ const fmt = (iso: string) => new Date(iso).toLocaleDateString();
 
 const specialCls = {
   waiting: "bg-amber-900/50 text-amber-300",
+  finding_coach: "bg-blue-900/50 text-blue-300",
   approved: "bg-emerald-900/60 text-emerald-300",
   rejected: "bg-red-900/50 text-red-300",
+} as const;
+
+const specialLabel = {
+  waiting: "Waiting for admin",
+  finding_coach: "Finding a coach",
+  approved: "Approved",
+  rejected: "Rejected",
 } as const;
 
 export default function LearnerSkillPage() {
@@ -207,7 +215,7 @@ export default function LearnerSkillPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium text-gray-100">{s.skill_name}</p>
                       <span className={`rounded-full px-3 py-1 text-xs ${specialCls[s.status]}`}>
-                        {s.status === "waiting" ? "Waiting for admin" : s.status}
+                        {specialLabel[s.status]}
                       </span>
                     </div>
                     <p className="text-xs text-gray-500">

@@ -221,8 +221,17 @@ export type SpecialRequest = {
   skill_name: string;
   category: string;
   description: string;
-  status: "waiting" | "approved" | "rejected";
+  status: SpecialStatus;
   create_date: string;
+};
+
+export type InterestedCoach = {
+  username: string;
+  firstname: string;
+  lastname: string;
+  image_path: string | null;
+  date: string;
+  time: string;
 };
 
 export type AdminSpecialRequest = SpecialRequest & {
@@ -230,7 +239,23 @@ export type AdminSpecialRequest = SpecialRequest & {
   firstname: string;
   lastname: string;
   image_path: string | null;
+  interests: InterestedCoach[];
 };
+
+export type CoachSpecial = {
+  uuid: string;
+  skill_name: string;
+  category: string;
+  description: string;
+  create_date: string;
+  interest_count: number;
+  interested: boolean;
+  interest_date: string | null;
+  interest_time: string | null;
+};
+
+
+export type SpecialStatus = "waiting" | "finding_coach" | "approved" | "rejected";
 
 export const isSuccess = (res: ApiResponse<unknown>) =>
   res.status === "success" && res.data !== null;
@@ -360,4 +385,10 @@ export const api = {
   special_mine: (username: string) =>
     request<SpecialRequest[]>(`/request/special/learner/${enc(username)}`),
   special_all: () => request<AdminSpecialRequest[]>("/request/special"),
+  special_finding: (uuid: string) =>
+    request<SpecialRequest>(`/request/special/${uuid}/finding`, { method: "PUT" }),
+  special_coach: (username: string) =>
+    request<CoachSpecial[]>(`/request/special/coach/${enc(username)}`),
+  special_interest: (body: { username: string; request_uuid: string; date: string; time: string }) =>
+    request<InterestedCoach>("/request/special/interest", json("POST", body)),
 };

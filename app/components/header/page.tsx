@@ -4,28 +4,31 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  House,
+  ArrowLeft,
   Award,
   CalendarCheck,
   CalendarClock,
   ChevronDown,
+  ClipboardCheck,
   LayoutDashboard,
   Layers,
-  LogOut,
-  ShieldCheck,
-  UserRound,
-  ClipboardCheck,
-  Search,
-  Users,
-  UserCheck,
   Lightbulb,
+  LogOut,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  UserCheck,
+  UserRound,
+  Users,
 } from "lucide-react";
 import { useAuth, homeOf } from "@/app/lib/auth";
 import { useAvatar } from "@/app/lib/avatar";
 import { roleTheme } from "@/app/lib/theme";
 import Modal from "@/app/components/modal/page";
 import { api, imageUrl } from "@/app/lib/api";
+
 const itemClass = "flex items-center gap-2 px-4 py-2 text-sm text-gray-200 hover:bg-gray-800";
+
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -61,9 +64,8 @@ export default function Header() {
     <>
       <header className="sticky top-0 z-40 border-b border-gray-800 bg-gray-950/90 backdrop-blur">
         <div className="flex h-14 items-center justify-between px-3">
-          {/* left: back button + logo */}
           <div className="flex items-center gap-2">
-            {/* {pathname !== "/" && (
+            {pathname !== "/" && (
               <button
                 type="button"
                 onClick={() => router.back()}
@@ -73,11 +75,11 @@ export default function Header() {
               >
                 <ArrowLeft size={20} />
               </button>
-            )} */}
+            )}
 
-            {(!user && pathname != "/") && <Link href="/" className="text-lg font-semibold text-white">
-              <House size={30} opacity={0.7} />
-            </Link>}
+            <Link href="/" className="text-lg font-semibold text-white">
+              Learning App
+            </Link>
           </div>
 
           {ready && user && (
@@ -104,7 +106,7 @@ export default function Header() {
               </button>
 
               <div className="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                <div className="w-48 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 py-1 shadow-lg shadow-black/50">
+                <div className="w-52 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 py-1 shadow-lg shadow-black/50">
                   <Link href={homeOf(user.role)} className={itemClass}>
                     {user.role === "admin" ? <LayoutDashboard size={16} /> : <UserRound size={16} />}
                     {user.role === "admin" ? "Dashboard" : "Profile"}
@@ -123,6 +125,10 @@ export default function Header() {
                       <Link href="/coach_match" className={itemClass}>
                         <Users size={16} />
                         Match
+                      </Link>
+                      <Link href="/coach_special_skill" className={itemClass}>
+                        <Sparkles size={16} />
+                        Special skill
                       </Link>
                     </>
                   )}
